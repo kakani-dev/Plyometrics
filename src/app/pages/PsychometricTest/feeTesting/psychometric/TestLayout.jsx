@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router";
 import PropTypes from "prop-types";
 import {
   SECTIONS,
   QUESTIONS,
   EXAM_CONFIG,
-  getQuestionsBySection,
 } from "./mockData";
 import {
   createTrackingMap,
@@ -23,9 +23,19 @@ import { OptionList } from "../tcsNqt/OptionList";
 import { InstructionsPage } from "./InstructionsPage";
 import { SummaryPage } from "./SummaryPage";
 
+function shuffleArray(arr) {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 const ALL_QUESTION_IDS = QUESTIONS.map((q) => q.id);
 
 export function TestLayout({ onRestart, onPhaseChange }) {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState("instructions");
   const [currentSection, setCurrentSection] = useState(SECTIONS[0].id);
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -33,6 +43,7 @@ export function TestLayout({ onRestart, onPhaseChange }) {
   const [timeRemaining, setTimeRemaining] = useState(
     EXAM_CONFIG.totalDurationMinutes * 60,
   );
+  const [shuffledQuestions, setShuffledQuestions] = useState(() => [...QUESTIONS]);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   const timerRef = useRef(null);
@@ -40,8 +51,8 @@ export function TestLayout({ onRestart, onPhaseChange }) {
   const submitRef = useRef(null);
 
   const sectionQuestions = useMemo(
-    () => getQuestionsBySection(currentSection),
-    [currentSection],
+    () => shuffledQuestions.filter((q) => q.section === currentSection),
+    [currentSection, shuffledQuestions],
   );
 
   const currentQuestion = sectionQuestions[currentQIndex];
@@ -110,11 +121,11 @@ export function TestLayout({ onRestart, onPhaseChange }) {
       if (currentSecIdx > 0) {
         const prevSection = SECTIONS[currentSecIdx - 1];
         setCurrentSection(prevSection.id);
-        const prevSecQs = getQuestionsBySection(prevSection.id);
+        const prevSecQs = shuffledQuestions.filter((q) => q.section === prevSection.id);
         setCurrentQIndex(prevSecQs.length - 1);
       }
     }
-  }, [currentQIndex, currentSection]);
+  }, [currentQIndex, currentSection, shuffledQuestions]);
 
   const handleSelectAnswer = useCallback(
     (answer) => {
@@ -137,6 +148,12 @@ export function TestLayout({ onRestart, onPhaseChange }) {
   const handleSubmit = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
 
+    const elapsedSeconds = EXAM_CONFIG.totalDurationMinutes * 60 - timeRemaining;
+    sessionStorage.setItem("examTracking", JSON.stringify(tracking));
+    sessionStorage.setItem("examQuestions", JSON.stringify(shuffledQuestions));
+    sessionStorage.setItem("examElapsed", JSON.stringify(elapsedSeconds));
+    sessionStorage.setItem("examConfig", JSON.stringify(EXAM_CONFIG));
+
     Promise.all(
       Object.values(tracking).map((record) =>
         sendAnswerTrackingEvent({
@@ -148,19 +165,25 @@ export function TestLayout({ onRestart, onPhaseChange }) {
         }),
       ),
     ).then(() => {
-      setPhase("summary");
       setShowSubmitModal(false);
+      navigate("/dashboards/user-exam-report");
     });
-  }, [tracking]);
+  }, [tracking, timeRemaining, shuffledQuestions, navigate]);
 
   submitRef.current = handleSubmit;
 
   const handleStartTest = useCallback(() => {
+    sessionStorage.removeItem("examTracking");
+    sessionStorage.removeItem("examQuestions");
+    sessionStorage.removeItem("examElapsed");
+    sessionStorage.removeItem("examConfig");
+    setShuffledQuestions(shuffleArray(QUESTIONS));
     setPhase("test");
     questionShownRef.current = false;
   }, []);
 
   const handleRestart = useCallback(() => {
+    setShuffledQuestions([...QUESTIONS]);
     setPhase("instructions");
     setCurrentSection(SECTIONS[0].id);
     setCurrentQIndex(0);
@@ -247,7 +270,7 @@ export function TestLayout({ onRestart, onPhaseChange }) {
             hasPrevious={hasPrevious}
             hasNext={hasNext}
             hasSelectedAnswer={!!selectedAnswer}
-            tracking={tracking}
+            onOpenSubmitModal={() => setShowSubmitModal(true)}
           />
         </div>
       </div>

@@ -7,7 +7,9 @@ export function FooterActions({
   onSaveNext,
   onNext,
   hasPrevious,
+  hasNext,
   hasSelectedAnswer,
+  onOpenSubmitModal,
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-white px-6 py-3 dark:border-dark-600 dark:bg-dark-800">
@@ -34,9 +36,18 @@ export function FooterActions({
         <ActionButton onClick={onSaveNext} disabled={!hasSelectedAnswer}>
           Save & Next
         </ActionButton>
-        <ActionButton onClick={onNext}>
-          Next
-        </ActionButton>
+        {hasNext ? (
+          <ActionButton onClick={onNext}>
+            Next
+          </ActionButton>
+        ) : (
+          <ActionButton
+            onClick={onOpenSubmitModal}
+            className="border-primary-500 bg-primary-500 text-white hover:bg-primary-600"
+          >
+            Submit
+          </ActionButton>
+        )}
       </div>
     </div>
   );
@@ -72,5 +83,7 @@ FooterActions.propTypes = {
   onSaveNext: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   hasPrevious: PropTypes.bool.isRequired,
+  hasNext: PropTypes.bool,
   hasSelectedAnswer: PropTypes.bool.isRequired,
+  onOpenSubmitModal: PropTypes.func,
 };

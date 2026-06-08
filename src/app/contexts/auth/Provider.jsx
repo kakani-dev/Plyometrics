@@ -153,6 +153,12 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
     setSession(null);
     dispatch({ type: "LOGOUT" });
   };
