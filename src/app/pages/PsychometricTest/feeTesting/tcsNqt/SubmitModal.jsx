@@ -13,7 +13,7 @@ export function SubmitModal({ isOpen, onClose, onConfirm, stats }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card skin="shadow-sm" className="w-full max-w-md p-6">
+      <Card skin="shadow" className="w-full max-w-md p-6">
         <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-dark-50">
           Confirm Submission
         </h2>
