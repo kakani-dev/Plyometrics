@@ -4,3 +4,5 @@
 **/
 
 export const JWT_HOST_API = "https://jwt-api-node.vercel.app";
+
+export const NEUROPI_API_BASE = "";

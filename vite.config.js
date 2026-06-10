@@ -13,4 +13,12 @@ export default defineConfig({
   }), jsconfigPaths(), svgr(),
   eslint(), tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7058',
+        secure: false,
+      },
+    },
+  },
 })

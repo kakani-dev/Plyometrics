@@ -34,22 +34,22 @@ const protectedRoutes = {
               }),
             },
             {
-              path: "user-exam-report",
+              path: "report",
               lazy: async () => ({
-                Component: (await import("app/pages/dashboards/UserExamReport")).default,
+                Component: (await import("app/pages/dashboards/CombinedReport")).default,
               }),
+            },
+            {
+              path: "user-exam-report",
+              element: <Navigate to="/dashboards/report" replace />,
             },
             {
               path: "user-response",
-              lazy: async () => ({
-                Component: (await import("app/pages/dashboards/UserResponse")).default,
-              }),
+              element: <Navigate to="/dashboards/report" replace />,
             },
             {
               path: "marks-report",
-              lazy: async () => ({
-                Component: (await import("app/pages/dashboards/MarksReport")).default,
-              }),
+              element: <Navigate to="/dashboards/report" replace />,
             },
           ],
         },

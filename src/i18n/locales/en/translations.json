@@ -3,6 +3,7 @@
     "dashboards": {
       "dashboards": "Dashboards",
       "home": "Home",
+      "assessmentReport": "Assessment Report",
       "userExamReport": "User Exam Report",
       "userResponse": "User Response",
       "marksReport": "Marks Report"

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router";
 import PropTypes from "prop-types";
 import {
   SECTIONS,
@@ -13,8 +14,10 @@ import {
   markForReview,
   clearAnswer,
   analyzeSuspiciousBehavior,
-  sendAnswerTrackingEvent,
+  submitFullExam,
 } from "./trackingService";
+import { saveExamResult } from "app/pages/dashboards/examStorage";
+import { useAuthContext } from "app/contexts/auth/context";
 import { Header } from "./Header";
 import { SectionTabs } from "./SectionTabs";
 import { QuestionCard } from "./QuestionCard";
@@ -29,6 +32,8 @@ import { SummaryPage } from "./SummaryPage";
 const ALL_QUESTION_IDS = QUESTIONS.map((q) => q.id);
 
 export function TestLayout({ onRestart, onPhaseChange }) {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [phase, setPhase] = useState("instructions");
   const [currentSection, setCurrentSection] = useState(SECTIONS[0].id);
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -160,21 +165,55 @@ export function TestLayout({ onRestart, onPhaseChange }) {
     const report = analyzeSuspiciousBehavior(tracking);
     setSuspiciousReport(report);
 
-    Promise.all(
-      Object.values(tracking).map((record) =>
-        sendAnswerTrackingEvent({
-          questionId: record.questionId,
-          selectedAnswer: record.selectedAnswer,
-          questionShownAt: record.questionShownAt,
-          answerSelectedAt: record.answerSelectedAt,
-          timeTakenSeconds: record.timeTakenSeconds,
-        }),
-      ),
-    ).then(() => {
-      setPhase("summary");
-      setShowSubmitModal(false);
+    const elapsedSeconds = EXAM_CONFIG.totalDurationMinutes * 60 - timeRemaining;
+    sessionStorage.setItem("examTracking", JSON.stringify(tracking));
+    sessionStorage.setItem("examQuestions", JSON.stringify(QUESTIONS));
+    sessionStorage.setItem("examElapsed", JSON.stringify(elapsedSeconds));
+    sessionStorage.setItem("examConfig", JSON.stringify(EXAM_CONFIG));
+    saveExamResult({ tracking, questions: QUESTIONS, elapsed: elapsedSeconds, config: EXAM_CONFIG });
+
+    const questionAnswers = Object.values(tracking).map((record) => {
+      const q = QUESTIONS.find(question => question.id === record.questionId);
+      return {
+        questionId: record.questionId,
+        questionText: q?.text || "",
+        section: q?.section || "",
+        type: q?.type || "",
+        selectedAnswer: record.selectedAnswer,
+        correctAnswer: q?.correctAnswer || null,
+        timeTakenSeconds: record.timeTakenSeconds || 0,
+        questionShownAt: record.questionShownAt || 0,
+        answerSelectedAt: record.answerSelectedAt || 0,
+      };
     });
-  }, [tracking]);
+
+    const sections = SECTIONS.map(s => ({ name: s.id, label: s.label }));
+
+    const fullPayload = {
+      userId: user?.id || 0,
+      examId: 2,
+      examTitle: EXAM_CONFIG.title,
+      userName: "",
+      email: "",
+      questionAnswers,
+      totalQuestions: EXAM_CONFIG.totalQuestions,
+      elapsedSeconds,
+      sections,
+      questions: QUESTIONS.map(q => ({
+        id: q.id,
+        text: q.text,
+        section: q.section,
+        type: q.type,
+        correctAnswer: q.correctAnswer || null,
+        options: q.options || [],
+      })),
+    };
+
+    submitFullExam(fullPayload);
+
+    setShowSubmitModal(false);
+    navigate("/dashboards/report");
+  }, [tracking, timeRemaining, user, navigate]);
 
   submitRef.current = handleSubmit;
 

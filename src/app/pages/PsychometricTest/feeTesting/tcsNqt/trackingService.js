@@ -132,3 +132,14 @@ export async function sendAnswerTrackingEvent(payload) {
     return { success: true, mock: true, payload };
   }
 }
+
+export async function submitFullExam(payload) {
+  try {
+    const { submitExam } = await import("services/examApi");
+    const res = await submitExam(payload);
+    return res;
+  } catch (error) {
+    console.warn("[submitFullExam] Fallback:", error.message);
+    return { success: false };
+  }
+}

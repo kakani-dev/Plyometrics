@@ -9,11 +9,16 @@ import {
   RectangleGroupIcon,
   HeartIcon,
   MapIcon,
+  UserIcon,
+  EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import { Avatar, Card } from "components/ui";
 import { EXAM_CONFIG, INSTRUCTIONS, SECTIONS, QUESTIONS } from "./mockData";
 
 export function InstructionsPage({ onStart }) {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+
   return (
     <div className="w-full">
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5 lg:gap-6">
@@ -56,7 +61,17 @@ export function InstructionsPage({ onStart }) {
         </table>
       </div>
 
-      <InstructionsCheckbox onStart={onStart} />
+      <CandidateForm
+        fullName={fullName}
+        email={email}
+        onFullNameChange={setFullName}
+        onEmailChange={setEmail}
+      />
+
+      <InstructionsCheckbox
+        onStart={() => onStart({ fullName, email })}
+        disabled={!fullName.trim() || !email.trim()}
+      />
     </div>
   );
 }
@@ -116,8 +131,60 @@ InstructionCard.propTypes = {
   icon: PropTypes.node.isRequired,
 };
 
-function InstructionsCheckbox({ onStart }) {
+function CandidateForm({ fullName, email, onFullNameChange, onEmailChange }) {
+  return (
+    <Card className="mb-6 p-5">
+      <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-dark-50">
+        <UserIcon className="size-5 text-primary-500" />
+        Candidate Information
+      </h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-dark-300">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <UserIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => onFullNameChange(e.target.value)}
+              placeholder="Enter your full name"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-dark-500 dark:bg-dark-800 dark:text-dark-50 dark:placeholder-dark-400"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-dark-300">
+            Email <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <EnvelopeIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => onEmailChange(e.target.value)}
+              placeholder="Enter your email"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-dark-500 dark:bg-dark-800 dark:text-dark-50 dark:placeholder-dark-400"
+            />
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+CandidateForm.propTypes = {
+  fullName: PropTypes.string.isRequired,
+  email: PropTypes.string.isRequired,
+  onFullNameChange: PropTypes.func.isRequired,
+  onEmailChange: PropTypes.func.isRequired,
+};
+
+function InstructionsCheckbox({ onStart, disabled }) {
   const [checked, setChecked] = useState(false);
+
+  const canStart = checked && !disabled;
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-dark-600 dark:bg-dark-800">
@@ -134,7 +201,7 @@ function InstructionsCheckbox({ onStart }) {
       </label>
       <button
         type="button"
-        disabled={!checked}
+        disabled={!canStart}
         onClick={onStart}
         className="mt-4 w-full rounded-lg bg-primary-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
       >
@@ -146,4 +213,5 @@ function InstructionsCheckbox({ onStart }) {
 
 InstructionsCheckbox.propTypes = {
   onStart: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
 };

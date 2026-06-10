@@ -29,6 +29,7 @@ export const QUESTIONS = validQuestions.map((q) => {
         return text && text.trim() ? { id: letter.toLowerCase(), text: text.trim() } : null;
       })
       .filter(Boolean);
+    question.correctAnswer = q["Correct/Key"]?.toLowerCase() || null;
   }
   return question;
 });

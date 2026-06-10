@@ -45,12 +45,10 @@ export function selectAnswer(tracking, questionId, answer) {
 
 export function markForReview(tracking, questionId) {
   const record = { ...tracking[questionId] };
-  if (record.status === "answered") {
+  if (record.status === "answered" || record.status === "answered-and-marked") {
     record.status = "answered-and-marked";
-  } else if (record.status !== "answered-and-marked") {
-    record.status = "marked-for-review";
   } else {
-    record.status = "answered";
+    record.status = "marked-for-review";
   }
   return { ...tracking, [questionId]: record };
 }
@@ -58,10 +56,40 @@ export function markForReview(tracking, questionId) {
 export function clearAnswer(tracking, questionId) {
   const record = { ...tracking[questionId] };
   record.selectedAnswer = null;
-  record.status = "not-answered";
+  record.answerSelectedAt = null;
+  record.timeTakenSeconds = null;
+
+  if (record.status === "answered-and-marked") {
+    record.status = "marked-for-review";
+  } else {
+    record.status = "not-answered";
+  }
+
   return { ...tracking, [questionId]: record };
 }
 
-export function sendAnswerTrackingEvent() {
-  return Promise.resolve({ success: true });
+export async function sendAnswerTrackingEvent(payload) {
+  try {
+    const response = await fetch("/api/test/answer-tracking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.warn("[sendAnswerTrackingEvent] Mock fallback:", error.message);
+    return { success: true, mock: true, payload };
+  }
+}
+
+export async function submitFullExam(payload) {
+  try {
+    const { submitExam } = await import("services/examApi");
+    const res = await submitExam(payload);
+    return res;
+  } catch (error) {
+    console.warn("[submitFullExam] Fallback:", error.message);
+    return { success: false };
+  }
 }

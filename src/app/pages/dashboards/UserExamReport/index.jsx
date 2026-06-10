@@ -1,13 +1,15 @@
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Page } from "components/shared/Page";
+import { getExamReport } from "services/examApi";
+import { loadExamResult } from "app/pages/dashboards/examStorage";
 
 const FLAG_THRESHOLD = { likert: 2, mcq: 5 };
 
 function getFlagLevel(timeTaken, type) {
   if (timeTaken == null) return null;
   if (timeTaken < 1) return "critical";
-  if (timeTaken < FLAG_THRESHOLD[type] || FLAG_THRESHOLD.likert) return "warning";
+  if (timeTaken < (FLAG_THRESHOLD[type] || FLAG_THRESHOLD.likert)) return "warning";
   return "normal";
 }
 
@@ -19,50 +21,75 @@ function formatTime(seconds) {
   return `${m}m ${s}s`;
 }
 
-export default function UserExamReport() {
+export default function UserExamReport({ selectedExamId }) {
   const navigate = useNavigate();
+  const [examData, setExamData] = useState(null);
+  const [loading, setLoading] = useState(!!selectedExamId);
+  const [prevExamId, setPrevExamId] = useState(selectedExamId);
 
-  const data = useMemo(() => {
-    try {
-      const tracking = JSON.parse(sessionStorage.getItem("examTracking") || "{}");
-      const questions = JSON.parse(sessionStorage.getItem("examQuestions") || "[]");
-      const elapsed = JSON.parse(sessionStorage.getItem("examElapsed") || "0");
-      const config = JSON.parse(sessionStorage.getItem("examConfig") || "{}");
-      return { tracking, questions, elapsed, config };
-    } catch {
-      return { tracking: {}, questions: [], elapsed: 0, config: {} };
-    }
-  }, []);
+  if (selectedExamId !== prevExamId) {
+    setPrevExamId(selectedExamId);
+    setLoading(!!selectedExamId);
+    setExamData(null);
+  }
 
-  const { tracking, questions, elapsed, config } = data;
-  const questionMap = useMemo(
-    () => Object.fromEntries(questions.map((q) => [q.id, q])),
-    [questions],
-  );
+  useEffect(() => {
+    if (!selectedExamId) return;
+
+    let active = true;
+    (async () => {
+      try {
+        const res = await getExamReport(selectedExamId);
+        if (!active) return;
+        setExamData(res?.data || null);
+      } catch {
+        if (!active) return;
+        const local = loadExamResult(selectedExamId);
+        if (local) {
+          const tracking = Object.values(local.tracking).map(r => ({
+            questionId: r.questionId,
+            selectedAnswer: r.selectedAnswer,
+            timeTakenSeconds: r.timeTakenSeconds,
+            status: r.status,
+            questionText: local.questions.find(q => q.id === r.questionId)?.text,
+            section: local.questions.find(q => q.id === r.questionId)?.section,
+            type: local.questions.find(q => q.id === r.questionId)?.type,
+          }));
+          setExamData({ questions: tracking, totalQuestions: local.questions.length, status: "completed", completedAt: null });
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedExamId]);
 
   const records = useMemo(() => {
-    return Object.values(tracking).map((r) => {
-      const q = questionMap[r.questionId];
-      const flagLevel = getFlagLevel(r.timeTakenSeconds, q?.type);
-      return { ...r, question: q, flagLevel };
+    if (!examData?.questions) return [];
+    return examData.questions.map(q => {
+      const flagLevel = getFlagLevel(q.timeTakenSeconds, q.type);
+      return { ...q, flagLevel, question: q };
     });
-  }, [tracking, questionMap]);
+  }, [examData]);
 
   const stats = useMemo(() => {
     const total = records.length;
-    const answered = records.filter(
-      (r) => r.status === "answered" || r.status === "answered-and-marked",
-    ).length;
-    const notAnswered = records.filter(
-      (r) => r.status === "not-answered" || r.status === "not-visited",
-    ).length;
-    const flagged = records.filter((r) => r.flagLevel === "warning" || r.flagLevel === "critical").length;
-    const critical = records.filter((r) => r.flagLevel === "critical").length;
-    const avgTime = answered > 0
-      ? records.reduce((sum, r) => sum + (r.timeTakenSeconds || 0), 0) / answered
-      : 0;
+    const answered = records.filter(r => r.selectedAnswer).length;
+    const notAnswered = total - answered;
+    const flagged = records.filter(r => r.flagLevel === "warning" || r.flagLevel === "critical").length;
+    const critical = records.filter(r => r.flagLevel === "critical").length;
+    const avgTime = answered > 0 ? records.reduce((sum, r) => sum + (r.timeTakenSeconds || 0), 0) / answered : 0;
     return { total, answered, notAnswered, flagged, critical, avgTime };
   }, [records]);
+
+  if (loading) {
+    return <Page title="User Exam Report"><div className="flex items-center justify-center py-20"><p className="text-gray-500">Loading...</p></div></Page>;
+  }
 
   const noData = records.length === 0;
 
@@ -71,19 +98,9 @@ export default function UserExamReport() {
       <Page title="User Exam Report">
         <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
           <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <h2 className="text-xl font-medium text-gray-800 dark:text-dark-50">
-              No Exam Data
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-dark-400">
-              Complete a psychometric test first to see your report.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate("/dashboards/home")}
-              className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-            >
-              Go to Test
-            </button>
+            <h2 className="text-xl font-medium text-gray-800 dark:text-dark-50">No Exam Data</h2>
+            <p className="text-sm text-gray-500 dark:text-dark-400">Complete a psychometric test first to see your report.</p>
+            <button type="button" onClick={() => navigate("/dashboards/home")} className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-700">Go to Test</button>
           </div>
         </div>
       </Page>
@@ -94,12 +111,13 @@ export default function UserExamReport() {
     <Page title="User Exam Report">
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
         <div className="mb-6">
-          <h2 className="text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
-            User Exam Report
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-dark-400">
-            {config.title || "Psychometric Assessment"} &middot; {formatTime(elapsed)}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">User Exam Report</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-dark-400">Psychometric Assessment</p>
+            </div>
+
+          </div>
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -126,84 +144,37 @@ export default function UserExamReport() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-dark-600">
-                {records.map((r, i) => {
-                  const q = r.question;
-                  return (
-                    <tr
-                      key={r.questionId}
-                      className={`${
-                        r.flagLevel === "critical"
-                          ? "bg-red-50 dark:bg-red-900/10"
-                          : r.flagLevel === "warning"
-                            ? "bg-amber-50 dark:bg-amber-900/10"
-                            : ""
-                      }`}
-                    >
-                      <td className="px-4 py-2 text-gray-500 dark:text-dark-400">{i + 1}</td>
-                      <td className="max-w-xs truncate px-4 py-2 text-gray-900 dark:text-dark-50">
-                        {q?.text || r.questionId}
-                      </td>
-                      <td className="px-4 py-2 capitalize text-gray-700 dark:text-dark-200">
-                        {q?.section?.replace(/-/g, " ") || "--"}
-                      </td>
-                      <td className="px-4 py-2 capitalize text-gray-700 dark:text-dark-200">
-                        {q?.type || "--"}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-dark-200">
-                        {r.selectedAnswer ? (
-                          <span className="font-medium text-primary-600 dark:text-primary-400">
-                            {r.selectedAnswer.toUpperCase()}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">--</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-dark-200">
-                        {formatTime(r.timeTakenSeconds)}
-                      </td>
-                      <td className="px-4 py-2">
-                        <StatusBadge status={r.status} flagLevel={r.flagLevel} />
-                      </td>
-                    </tr>
-                  );
-                })}
+                {records.map((r, i) => (
+                  <tr key={r.questionId || i}
+                    className={`${r.flagLevel === "critical" ? "bg-red-50 dark:bg-red-900/10" : r.flagLevel === "warning" ? "bg-amber-50 dark:bg-amber-900/10" : ""}`}>
+                    <td className="px-4 py-2 text-gray-500 dark:text-dark-400">{i + 1}</td>
+                    <td className="max-w-xs truncate px-4 py-2 text-gray-900 dark:text-dark-50">{r.questionText || r.questionId}</td>
+                    <td className="px-4 py-2 capitalize text-gray-700 dark:text-dark-200">{r.section?.replace(/-/g, " ") || "--"}</td>
+                    <td className="px-4 py-2 capitalize text-gray-700 dark:text-dark-200">{r.type || "--"}</td>
+                    <td className="px-4 py-2 text-gray-700 dark:text-dark-200">
+                      {r.selectedAnswer ? <span className="font-medium text-primary-600 dark:text-primary-400">{r.selectedAnswer.toUpperCase()}</span> : <span className="text-gray-400">--</span>}
+                    </td>
+                    <td className="px-4 py-2 text-gray-700 dark:text-dark-200">{formatTime(r.timeTakenSeconds)}</td>
+                    <td className="px-4 py-2"><StatusBadge status={r.status} flagLevel={r.flagLevel} /></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
 
         <div className="mb-6 rounded-lg border border-gray-200 p-4 dark:border-dark-600">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-dark-50">
-            Timing Flag Legend
-          </h3>
+          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-dark-50">Timing Flag Legend</h3>
           <div className="space-y-2 text-xs text-gray-600 dark:text-dark-300">
-            <p>
-              <span className="inline-block size-3 rounded bg-red-400 align-middle" />
-              &nbsp; <strong>Critical</strong> &mdash; answered in under 1s (likely random)
-            </p>
-            <p>
-              <span className="inline-block size-3 rounded bg-amber-400 align-middle" />
-              &nbsp; <strong>Rushed</strong> &mdash; Likert answered under 2s / MCQ under 5s
-            </p>
-            <p>
-              <span className="inline-block size-3 rounded bg-green-400 align-middle" />
-              &nbsp; <strong>Normal</strong> &mdash; reasonable response time
-            </p>
-            <p>
-              <span className="inline-block size-3 rounded bg-gray-300 align-middle" />
-              &nbsp; <strong>Not visited / Not answered</strong>
-            </p>
+            <p><span className="inline-block size-3 rounded bg-red-400 align-middle" />&nbsp; <strong>Critical</strong> &mdash; answered in under 1s (likely random)</p>
+            <p><span className="inline-block size-3 rounded bg-amber-400 align-middle" />&nbsp; <strong>Rushed</strong> &mdash; Likert answered under 2s / MCQ under 5s</p>
+            <p><span className="inline-block size-3 rounded bg-green-400 align-middle" />&nbsp; <strong>Normal</strong> &mdash; reasonable response time</p>
+            <p><span className="inline-block size-3 rounded bg-gray-300 align-middle" />&nbsp; <strong>Not visited / Not answered</strong></p>
           </div>
         </div>
 
         <div className="flex justify-center pb-6">
-          <button
-            type="button"
-            onClick={() => navigate("/dashboards/home")}
-            className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-          >
-            Back to Dashboard
-          </button>
+          <button type="button" onClick={() => navigate("/dashboards/home")} className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-700">Back to Dashboard</button>
         </div>
       </div>
     </Page>
@@ -217,8 +188,8 @@ function SummaryCard({ label, value, color }) {
     error: "border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300",
     warning: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300",
     secondary: "border-gray-300 bg-gray-50 text-gray-700 dark:border-dark-500 dark:bg-dark-700 dark:text-dark-200",
+    primary: "border-primary-300 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-900/20 dark:text-primary-300",
   };
-
   return (
     <div className={`rounded-lg border p-4 text-center ${colors[color] || colors.secondary}`}>
       <p className="text-2xl font-bold">{value}</p>
@@ -235,30 +206,12 @@ function StatusBadge({ status, flagLevel }) {
     "not-answered": "bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-dark-400",
     "not-visited": "bg-gray-100 text-gray-400 dark:bg-dark-700 dark:text-dark-500",
   };
-
   let label = status?.replace(/-/g, " ") || "unknown";
   let styleKey = status;
-
-  if (flagLevel === "critical") {
-    styleKey = "critical";
-    label = "very rushed";
-  } else if (flagLevel === "warning") {
-    styleKey = "warning";
-    label = "rushed";
-  } else if (status === "answered" || status === "answered-and-marked") {
-    styleKey = "normal";
-    label = "genuine";
-  } else if (status === "not-visited" || status === "not-answered") {
-    styleKey = status;
-  }
-
+  if (flagLevel === "critical") { styleKey = "critical"; label = "very rushed"; }
+  else if (flagLevel === "warning") { styleKey = "warning"; label = "rushed"; }
+  else if (status === "answered" || status === "answered-and-marked") { styleKey = "normal"; label = "genuine"; }
   return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
-        styles[styleKey] || styles["not-visited"]
-      }`}
-    >
-      {label}
-    </span>
+    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${styles[styleKey] || styles["not-visited"]}`}>{label}</span>
   );
 }

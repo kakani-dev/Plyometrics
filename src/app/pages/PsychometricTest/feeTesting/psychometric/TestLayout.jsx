@@ -12,8 +12,10 @@ import {
   selectAnswer,
   markForReview,
   clearAnswer,
-  sendAnswerTrackingEvent,
+  submitFullExam,
 } from "./trackingService";
+import { saveExamResult } from "app/pages/dashboards/examStorage";
+import { useAuthContext } from "app/contexts/auth/context";
 import { Header } from "../tcsNqt/Header";
 import { QuestionCard } from "../tcsNqt/QuestionCard";
 import { FooterActions } from "../tcsNqt/FooterActions";
@@ -36,6 +38,7 @@ const ALL_QUESTION_IDS = QUESTIONS.map((q) => q.id);
 
 export function TestLayout({ onRestart, onPhaseChange }) {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [phase, setPhase] = useState("instructions");
   const [currentSection, setCurrentSection] = useState(SECTIONS[0].id);
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -45,10 +48,12 @@ export function TestLayout({ onRestart, onPhaseChange }) {
   );
   const [shuffledQuestions, setShuffledQuestions] = useState(() => [...QUESTIONS]);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [candidateInfo, setCandidateInfo] = useState({ fullName: "", email: "" });
 
   const timerRef = useRef(null);
   const questionShownRef = useRef(false);
   const submitRef = useRef(null);
+  const submittedRef = useRef(false);
 
   const sectionQuestions = useMemo(
     () => shuffledQuestions.filter((q) => q.section === currentSection),
@@ -70,7 +75,6 @@ export function TestLayout({ onRestart, onPhaseChange }) {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          submitRef.current?.();
           return 0;
         }
         return prev - 1;
@@ -80,6 +84,13 @@ export function TestLayout({ onRestart, onPhaseChange }) {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [phase]);
+
+  useEffect(() => {
+    if (phase === "test" && timeRemaining <= 0 && !submittedRef.current) {
+      submittedRef.current = true;
+      submitRef.current?.();
+    }
+  }, [timeRemaining, phase]);
 
   useEffect(() => {
     if (phase === "test" && currentQuestion && !questionShownRef.current) {
@@ -152,34 +163,69 @@ export function TestLayout({ onRestart, onPhaseChange }) {
     sessionStorage.setItem("examTracking", JSON.stringify(tracking));
     sessionStorage.setItem("examQuestions", JSON.stringify(shuffledQuestions));
     sessionStorage.setItem("examElapsed", JSON.stringify(elapsedSeconds));
-    sessionStorage.setItem("examConfig", JSON.stringify(EXAM_CONFIG));
+    sessionStorage.setItem("examConfig", JSON.stringify({ ...EXAM_CONFIG, candidateInfo }));
+    saveExamResult({ tracking, questions: shuffledQuestions, elapsed: elapsedSeconds, config: EXAM_CONFIG, candidateInfo });
 
-    Promise.all(
-      Object.values(tracking).map((record) =>
-        sendAnswerTrackingEvent({
-          questionId: record.questionId,
-          selectedAnswer: record.selectedAnswer,
-          questionShownAt: record.questionShownAt,
-          answerSelectedAt: record.answerSelectedAt,
-          timeTakenSeconds: record.timeTakenSeconds,
-        }),
-      ),
-    ).then(() => {
-      setShowSubmitModal(false);
-      navigate("/dashboards/user-exam-report");
+    const questionAnswers = Object.values(tracking).map((record) => {
+      const q = shuffledQuestions.find(question => question.id === record.questionId);
+      return {
+        questionId: record.questionId,
+        questionText: q?.text || "",
+        section: q?.section || "",
+        type: q?.type || "",
+        selectedAnswer: record.selectedAnswer,
+        correctAnswer: q?.correctAnswer || null,
+        timeTakenSeconds: record.timeTakenSeconds || 0,
+        questionShownAt: record.questionShownAt || 0,
+        answerSelectedAt: record.answerSelectedAt || 0,
+      };
     });
-  }, [tracking, timeRemaining, shuffledQuestions, navigate]);
+
+    const sections = SECTIONS.map(s => ({ name: s.id, label: s.label }));
+
+    const fullPayload = {
+      userId: user?.id || 0,
+      examId: 1,
+      examTitle: EXAM_CONFIG.title,
+      userName: candidateInfo?.fullName || "",
+      email: candidateInfo?.email || "",
+      questionAnswers,
+      totalQuestions: EXAM_CONFIG.totalQuestions,
+      elapsedSeconds,
+      sections,
+      questions: shuffledQuestions.map(q => ({
+        id: q.id,
+        text: q.text,
+        section: q.section,
+        type: q.type,
+        correctAnswer: q.correctAnswer || null,
+        options: q.options || [],
+      })),
+    };
+
+    submitFullExam(fullPayload);
+
+    setShowSubmitModal(false);
+    navigate("/dashboards/report");
+  }, [tracking, timeRemaining, shuffledQuestions, candidateInfo, user, navigate]);
 
   submitRef.current = handleSubmit;
 
-  const handleStartTest = useCallback(() => {
+  const handleStartTest = useCallback((info) => {
     sessionStorage.removeItem("examTracking");
     sessionStorage.removeItem("examQuestions");
     sessionStorage.removeItem("examElapsed");
     sessionStorage.removeItem("examConfig");
+    setCandidateInfo(info);
+
+    import("services/examApi").then(({ createUserPy }) => {
+      createUserPy({ fullname: info.fullName, email: info.email }).catch(() => {});
+    });
+
     setShuffledQuestions(shuffleArray(QUESTIONS));
     setPhase("test");
     questionShownRef.current = false;
+    submittedRef.current = false;
   }, []);
 
   const handleRestart = useCallback(() => {
@@ -191,6 +237,8 @@ export function TestLayout({ onRestart, onPhaseChange }) {
     setTimeRemaining(EXAM_CONFIG.totalDurationMinutes * 60);
     setShowSubmitModal(false);
     questionShownRef.current = false;
+    submittedRef.current = false;
+    setCandidateInfo({ fullName: "", email: "" });
     if (onRestart) onRestart();
   }, [onRestart]);
 
