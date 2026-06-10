@@ -1,4 +1,4 @@
-import { HomeIcon, ClipboardDocumentListIcon, UserIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ClipboardDocumentListIcon, UserIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import DashboardsIcon from 'assets/dualicons/dashboards.svg?react'
 import { NAV_TYPE_ROOT, NAV_TYPE_ITEM } from 'constants/app.constant'
 
@@ -37,6 +37,14 @@ export const dashboards = {
             title: 'Counselor Screen',
             transKey: 'nav.dashboards.counselorScreen',
             Icon: UserIcon,
+        },
+        {
+            id: 'dashboards.candidateRegistration',
+            path: path(ROOT_DASHBOARDS, '/candidate-registration'),
+            type: NAV_TYPE_ITEM,
+            title: 'Candidate Registration',
+            transKey: 'nav.dashboards.candidateRegistration',
+            Icon: DocumentTextIcon,
         },
         {
             id: 'dashboards.assessmentUi',

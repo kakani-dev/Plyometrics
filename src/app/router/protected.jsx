@@ -46,6 +46,12 @@ const protectedRoutes = {
               }),
             },
             {
+              path: "candidate-registration",
+              lazy: async () => ({
+                Component: (await import("app/pages/dashboards/CandidateRegistration")).default,
+              }),
+            },
+            {
               path: "assessment-ui",
               lazy: async () => ({
                 Component: (await import("app/pages/dashboards/AssessmentUI")).default,
