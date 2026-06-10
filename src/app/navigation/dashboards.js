@@ -1,4 +1,4 @@
-import { HomeIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ClipboardDocumentListIcon, UserIcon } from '@heroicons/react/24/outline';
 import DashboardsIcon from 'assets/dualicons/dashboards.svg?react'
 import { NAV_TYPE_ROOT, NAV_TYPE_ITEM } from 'constants/app.constant'
 
@@ -21,6 +21,30 @@ export const dashboards = {
             title: 'Home',
             transKey: 'nav.dashboards.home',
             Icon: HomeIcon,
+        },
+        {
+            id: 'dashboards.userScreen',
+            path: path(ROOT_DASHBOARDS, '/user-screen'),
+            type: NAV_TYPE_ITEM,
+            title: 'User Screen',
+            transKey: 'nav.dashboards.userScreen',
+            Icon: UserIcon,
+        },
+        {
+            id: 'dashboards.counselorScreen',
+            path: path(ROOT_DASHBOARDS, '/counselor-screen'),
+            type: NAV_TYPE_ITEM,
+            title: 'Counselor Screen',
+            transKey: 'nav.dashboards.counselorScreen',
+            Icon: UserIcon,
+        },
+        {
+            id: 'dashboards.assessmentUi',
+            path: path(ROOT_DASHBOARDS, '/assessment-ui'),
+            type: NAV_TYPE_ITEM,
+            title: 'Assessment UI',
+            transKey: 'nav.dashboards.assessmentUi',
+            Icon: ClipboardDocumentListIcon,
         },
         {
             id: 'dashboards.report',

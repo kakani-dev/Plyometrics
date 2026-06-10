@@ -3,7 +3,10 @@
     "dashboards": {
       "dashboards": "لوحات التحكم",
       "home": "الرئيسية",
-      "assessmentReport": "تقرير التقييم"
+      "assessmentReport": "تقرير التقييم",
+      "userScreen": "شاشة المستخدم",
+      "counselorScreen": "شاشة المستشار",
+      "assessmentUi": "واجهة التقييم"
     },
     "settings": {
       "settings": "الإعدادات",

@@ -34,6 +34,24 @@ const protectedRoutes = {
               }),
             },
             {
+              path: "user-screen",
+              lazy: async () => ({
+                Component: (await import("app/pages/dashboards/UserScreen")).default,
+              }),
+            },
+            {
+              path: "counselor-screen",
+              lazy: async () => ({
+                Component: (await import("app/pages/dashboards/CounselorScreen")).default,
+              }),
+            },
+            {
+              path: "assessment-ui",
+              lazy: async () => ({
+                Component: (await import("app/pages/dashboards/AssessmentUI")).default,
+              }),
+            },
+            {
               path: "report",
               lazy: async () => ({
                 Component: (await import("app/pages/dashboards/CombinedReport")).default,
