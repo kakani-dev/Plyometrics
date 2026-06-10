@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Card, Radio, Button, Progress, Badge } from "components/ui";
+import { Card, Radio, Button, Progress } from "components/ui";
 import { ClockIcon, ArrowRightIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import questionsData from "./psychometrictest.json";
 import { TIME_THRESHOLDS } from "./data";
@@ -30,8 +30,6 @@ export function PsychometricTestCard({ testData, onBack }) {
     const newLog = {
       qid: currentQuestion.QID,
       question: currentQuestion.Question,
-      type: currentQuestion["Question Type"],
-      difficulty,
       thresholds,
       startedAt: questionStartTime.toISOString(),
       endedAt: endTime.toISOString(),
@@ -70,8 +68,6 @@ export function PsychometricTestCard({ testData, onBack }) {
     const newLog = {
       qid: currentQuestion.QID,
       question: currentQuestion.Question,
-      type: currentQuestion["Question Type"],
-      difficulty,
       thresholds,
       startedAt: questionStartTime.toISOString(),
       endedAt: endTime.toISOString(),
@@ -262,26 +258,9 @@ export function PsychometricTestCard({ testData, onBack }) {
               <span className="text-sm font-medium text-gray-400 dark:text-dark-300">
                 Question {currentIndex + 1} of {questionsData.length}
               </span>
-              <Badge variant="soft" color="info">
-                {currentQuestion.Domain}
-              </Badge>
-              <Badge variant="soft" color="secondary">
-                {currentQuestion.Subdomain}
-              </Badge>
             </div>
 
             <div className="flex items-center gap-3">
-              <Badge
-                color={
-                  difficulty === "Easy"
-                    ? "success"
-                    : difficulty === "Medium"
-                    ? "warning"
-                    : "error"
-                }
-              >
-                {difficulty}
-              </Badge>
               <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-dark-100">
                 <ClockIcon className="size-4" />
                 <span>{timeLeft}s</span>
