@@ -1,29 +1,45 @@
 // Import Dependencies
 import {
-  ArrowUpIcon,
   CubeIcon,
   CurrencyDollarIcon,
   PresentationChartBarIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 // Local Imports
 import { Avatar, Card } from "components/ui";
+import { NEUROPI_API_BASE } from "configs/auth.config";
 
 // ----------------------------------------------------------------------
 
-export function Overview() {
+export function Overview({ candidateCount = 0 }) {
+  const [stats, setStats] = useState({ totalSent: 0, completed: 0, pending: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await axios.get(
+          `${NEUROPI_API_BASE}/api/TestService/counselor/1/today/1`,
+        );
+        if (data && data.data) {
+          setStats(data.data);
+        }
+      } catch {
+        // keep defaults
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
       <Card className="flex justify-between p-5">
         <div>
           <p>Candidates</p>
           <p className="this:info mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
-            10
-          </p>
-          <p className="this:success mt-3 flex items-center gap-1 text-this dark:text-this-lighter">
-            <ArrowUpIcon className="size-4" />
-            <span>10%</span>
+            {candidateCount}
           </p>
         </div>
         <Avatar
@@ -42,11 +58,7 @@ export function Overview() {
         <div>
           <p>Requests Sent</p>
           <p className="this:warning mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
-            10
-          </p>
-          <p className="this:success mt-3 flex items-center gap-1 text-this dark:text-this-lighter">
-            <ArrowUpIcon className="size-4" />
-            <span>10%</span>
+            {stats.totalSent}
           </p>
         </div>
         <Avatar
@@ -65,11 +77,7 @@ export function Overview() {
         <div>
           <p>Users Completed</p>
           <p className="this:success mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
-            5
-          </p>
-          <p className="this:success mt-3 flex items-center gap-1 text-this dark:text-this-lighter">
-            <ArrowUpIcon className="size-4" />
-            <span>1%</span>
+            {stats.completed}
           </p>
         </div>
         <Avatar
@@ -88,11 +96,7 @@ export function Overview() {
         <div>
           <p>Users Pending</p>
           <p className="this:secondary mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
-            5
-          </p>
-          <p className="this:success mt-3 flex items-center gap-1 text-this dark:text-this-lighter">
-            <ArrowUpIcon className="size-4" />
-            <span>3.69%</span>
+            {stats.pending}
           </p>
         </div>
         <Avatar

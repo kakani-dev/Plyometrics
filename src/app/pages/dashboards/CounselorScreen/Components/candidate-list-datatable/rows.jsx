@@ -9,7 +9,7 @@ import {
   ListboxOptions,
   Transition,
 } from "@headlessui/react";
-import { CheckIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 
 // Local Imports
@@ -17,11 +17,11 @@ import { Highlight } from "components/shared/Highlight";
 import { Avatar, Badge, Tag } from "components/ui";
 import { useLocaleContext } from "app/contexts/locale/context";
 import { ensureString } from "utils/ensureString";
-import { orderStatusOptions } from "./data";
+import { candidateStatusOptions } from "./data";
 
 // ----------------------------------------------------------------------
 
-export function OrderIdCell({ getValue }) {
+export function IdCell({ getValue }) {
   return (
     <span className="font-medium text-primary-600 dark:text-primary-400">
       {getValue()}
@@ -65,6 +65,26 @@ export function CustomerCell({ row, getValue, column, table }) {
   );
 }
 
+export function EmailCell({ getValue }) {
+  const email = getValue();
+  return (
+    <div className="flex items-center gap-2">
+      <EnvelopeIcon className="size-4.5 stroke-1 text-gray-400 dark:text-dark-300" />
+      <span className="text-gray-800 dark:text-dark-100">{email}</span>
+    </div>
+  );
+}
+
+export function MobileNumberCell({ getValue }) {
+  const number = getValue();
+  return (
+    <div className="flex items-center gap-2">
+      <PhoneIcon className="size-4.5 stroke-1 text-gray-400 dark:text-dark-300" />
+      <span className="text-gray-800 dark:text-dark-100">{number}</span>
+    </div>
+  );
+}
+
 export function TotalCell({ getValue }) {
   return (
     <p className="text-sm-plus font-medium text-gray-800 dark:text-dark-100">
@@ -86,7 +106,7 @@ export function ProfitCell({ getValue, row }) {
   );
 }
 
-export function OrderStatusCell({ getValue, row, column, table }) {
+export function GenderCell({ getValue, row, column, table }) {
   const val = getValue();
   const isGender = column.id === "gender";
 
@@ -95,7 +115,7 @@ export function OrderStatusCell({ getValue, row, column, table }) {
         { value: "male", label: "Male", color: "info" },
         { value: "female", label: "Female", color: "warning" },
       ]
-    : orderStatusOptions;
+    : candidateStatusOptions;
 
   const normalizedVal = val ? String(val).toLowerCase() : "";
   const option = options.find(
@@ -108,7 +128,7 @@ export function OrderStatusCell({ getValue, row, column, table }) {
 
   const handleChangeStatus = (status) => {
     table.options.meta?.updateData(row.index, column.id, status);
-    toast.success(`${isGender ? "Gender" : "Order status"} updated to ${status}`);
+    toast.success(`${isGender ? "Gender" : "Status"} updated to ${status}`);
   };
 
   return (
@@ -161,6 +181,16 @@ export function OrderStatusCell({ getValue, row, column, table }) {
   );
 }
 
+export function ExamsCell({ row }) {
+  const finished = row.original.examsFinished ?? 0;
+  const total = row.original.examsTotal ?? 0;
+  return (
+    <span className="font-medium text-gray-800 dark:text-dark-100">
+      {finished}/{total}
+    </span>
+  );
+}
+
 export function AddressCell({ getValue, column, table }) {
   const globalQuery = ensureString(table.getState().globalFilter);
   const columnQuery = ensureString(column.getFilterValue());
@@ -173,7 +203,7 @@ export function AddressCell({ getValue, column, table }) {
   );
 }
 
-OrderIdCell.propTypes = {
+IdCell.propTypes = {
   getValue: PropTypes.func,
 };
 
@@ -190,11 +220,23 @@ ProfitCell.propTypes = {
   row: PropTypes.object,
 };
 
-OrderStatusCell.propTypes = {
+GenderCell.propTypes = {
   getValue: PropTypes.func,
   row: PropTypes.object,
   column: PropTypes.object,
   table: PropTypes.object,
+};
+
+MobileNumberCell.propTypes = {
+  getValue: PropTypes.func,
+};
+
+EmailCell.propTypes = {
+  getValue: PropTypes.func,
+};
+
+ExamsCell.propTypes = {
+  row: PropTypes.object,
 };
 
 AddressCell.propTypes = {

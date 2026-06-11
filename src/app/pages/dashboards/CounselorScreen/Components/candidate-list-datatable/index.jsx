@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 // Local Imports
 import { Table, Card, THead, TBody, Th, Tr, Td } from "components/ui";
@@ -21,7 +21,6 @@ import { fuzzyFilter } from "utils/react-table/fuzzyFilter";
 import { useSkipper } from "utils/react-table/useSkipper";
 import { Toolbar } from "./Toolbar";
 import { columns } from "./columns";
-import { getCandidatesByTenant } from "./data";
 import { PaginationSection } from "components/shared/table/PaginationSection";
 import { SelectedRowsActions } from "./SelectedRowsActions";
 import { useThemeContext } from "app/contexts/theme/context";
@@ -31,24 +30,8 @@ import { getUserAgentBrowser } from "utils/dom/getUserAgentBrowser";
 
 const isSafari = getUserAgentBrowser() === "Safari";
 
-export default function OrdersDatatableV1() {
+export default function CandidateListDatatable({ candidates, setCandidates }) {
   const { cardSkin } = useThemeContext();
-
-  const [orders, setOrders] = useState([]);
-
-  useEffect(() => {
-    const fetchCandidates = async () => {
-      try {
-        const data = await getCandidatesByTenant(1);
-        if (data && data.data) {
-          setOrders(data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching candidates:", error);
-      }
-    };
-    fetchCandidates();
-  }, []);
 
   const [tableSettings, setTableSettings] = useState({
     enableFullScreen: false,
@@ -60,19 +43,19 @@ export default function OrdersDatatableV1() {
   const [sorting, setSorting] = useState([]);
 
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
-    "column-visibility-orders-1",
+    "column-visibility-candidates-1",
     {},
   );
 
   const [columnPinning, setColumnPinning] = useLocalStorage(
-    "column-pinning-orders-1",
+    "column-pinning-candidates-1",
     {},
   );
 
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
 
   const table = useReactTable({
-    data: orders,
+    data: candidates,
     columns: columns,
     state: {
       globalFilter,
@@ -85,7 +68,7 @@ export default function OrdersDatatableV1() {
       updateData: (rowIndex, columnId, value) => {
         // Skip page index reset until after next rerender
         skipAutoResetPageIndex();
-        setOrders((old) =>
+        setCandidates((old) =>
           old.map((row, index) => {
             if (index === rowIndex) {
               return {
@@ -100,7 +83,7 @@ export default function OrdersDatatableV1() {
       deleteRow: (row) => {
         // Skip page index reset until after next rerender
         skipAutoResetPageIndex();
-        setOrders((old) =>
+        setCandidates((old) =>
           old.filter((oldRow) => oldRow.id !== row.original.id),
         );
       },
@@ -108,7 +91,7 @@ export default function OrdersDatatableV1() {
         // Skip page index reset until after next rerender
         skipAutoResetPageIndex();
         const rowIds = rows.map((row) => row.original.id);
-        setOrders((old) => old.filter((row) => !rowIds.includes(row.id)));
+        setCandidates((old) => old.filter((row) => !rowIds.includes(row.id)));
       },
       setTableSettings,
     },
@@ -133,12 +116,12 @@ export default function OrdersDatatableV1() {
     autoResetPageIndex,
   });
 
-  useDidUpdate(() => table.resetRowSelection(), [orders]);
+  useDidUpdate(() => table.resetRowSelection(), [candidates]);
 
   useLockScrollbar(tableSettings.enableFullScreen);
 
   return (
-    <Page title="Orders Datatable v1">
+    <Page title="Candidates List">
       <div className="transition-content w-full pb-5">
         <div
           className={clsx(

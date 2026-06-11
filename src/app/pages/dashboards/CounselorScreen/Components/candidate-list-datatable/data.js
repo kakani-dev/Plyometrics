@@ -8,7 +8,7 @@ export async function getCandidatesByTenant(tenantId = 1) {
 }
 
 
-export const orderStatusOptions = [
+export const candidateStatusOptions = [
     {
         value: 'shipping',
         label: 'Shipping',
@@ -41,7 +41,7 @@ export const orderStatusOptions = [
     }
 ]
 
-export const ordersList = [
+export const candidatesList = [
     {
         order_id: "#63858",
         created_at: "1676070562000",

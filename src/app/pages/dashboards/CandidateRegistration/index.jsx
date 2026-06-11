@@ -109,7 +109,8 @@ export default function CandidateRegistration() {
         dob: formValues.dob ? new Date(formValues.dob).toISOString() : null,
         email: formValues.email,
         mobilenumber: formValues.phone,
-        gender: formValues.gender
+        gender: formValues.gender,
+        tenantId: 1
       };
 
       const response = await createCandidate(payload);

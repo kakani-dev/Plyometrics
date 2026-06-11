@@ -9,7 +9,9 @@
       "marksReport": "Marks Report",
       "userScreen": "User Screen",
       "counselorScreen": "Counselor Screen",
-      "assessmentUi": "Assessment UI"
+      "assessmentUi": "Assessment UI",
+      "candidateRegistration": "Counselor Screen",
+      "examGenerator": "Assessment UI"
     },
     "settings": {
       "settings": "Settings",

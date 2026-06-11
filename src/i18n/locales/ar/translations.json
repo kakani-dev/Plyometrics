@@ -6,7 +6,9 @@
       "assessmentReport": "تقرير التقييم",
       "userScreen": "شاشة المستخدم",
       "counselorScreen": "شاشة المستشار",
-      "assessmentUi": "واجهة التقييم"
+      "assessmentUi": "واجهة التقييم",
+      "candidateRegistration": "شاشة المستشار",
+      "examGenerator": "واجهة التقييم"
     },
     "settings": {
       "settings": "الإعدادات",

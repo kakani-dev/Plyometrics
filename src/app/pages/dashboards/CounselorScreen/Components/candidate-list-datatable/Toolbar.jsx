@@ -15,17 +15,14 @@ import {
   Transition,
 } from "@headlessui/react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/20/solid";
-import { TbCurrencyDollar } from "react-icons/tb";
 import PropTypes from "prop-types";
 
 // Local Imports
 import { DateFilter } from "components/shared/table/DateFilter";
 import { FacedtedFilter } from "components/shared/table/FacedtedFilter";
-import { RangeFilter } from "components/shared/table/RangeFilter";
 import { Button, Input } from "components/ui";
 import { TableConfig } from "./TableConfig";
 import { useBreakpointsContext } from "app/contexts/breakpoint/context";
-import { orderStatusOptions } from "./data";
 
 // ----------------------------------------------------------------------
 
@@ -43,7 +40,7 @@ export function Toolbar({ table }) {
       >
         <div className="min-w-0">
           <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
-            Orders History
+            Candidates List
           </h2>
         </div>
         {isXs ? (
@@ -74,7 +71,7 @@ export function Toolbar({ table }) {
                         "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
                     )}
                   >
-                    <span>New Order</span>
+                    <span>New Candidate</span>
                   </button>
                 )}
               </MenuItem>
@@ -114,7 +111,7 @@ export function Toolbar({ table }) {
                         "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
                     )}
                   >
-                    <span>Import Orders</span>
+                    <span>Import Candidates</span>
                   </button>
                 )}
               </MenuItem>
@@ -252,7 +249,7 @@ export function Toolbar({ table }) {
                           "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
                       )}
                     >
-                      <span>New Order</span>
+                      <span>New Candidate</span>
                     </button>
                   )}
                 </MenuItem>
@@ -265,7 +262,7 @@ export function Toolbar({ table }) {
                           "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
                       )}
                     >
-                      <span>Share Orders</span>
+                      <span>Share</span>
                     </button>
                   )}
                 </MenuItem>
@@ -279,7 +276,7 @@ export function Toolbar({ table }) {
                           "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
                       )}
                     >
-                      <span>Import Orders</span>
+                    <span>Import Candidates</span>
                     </button>
                   )}
                 </MenuItem>
@@ -354,10 +351,10 @@ function SearchInput({ table }) {
       onChange={(e) => table.setGlobalFilter(e.target.value)}
       prefix={<MagnifyingGlassIcon className="size-4" />}
       classNames={{
-        input: "h-8 text-xs ring-primary-500/50 focus:ring-3",
+        input: "h-8 py-1 text-xs ring-primary-500/50 focus:ring-3",
         root: "shrink-0",
       }}
-      placeholder="Search ID, Customer..."
+      placeholder="Search ID, Name..."
     />
   );
 }
@@ -366,40 +363,26 @@ function Filters({ table }) {
   const isFiltered = table.getState().columnFilters.length > 0;
   return (
     <>
-      {table.getColumn("order_status") && (
+      {table.getColumn("gender") && (
         <FacedtedFilter
-          options={orderStatusOptions}
-          column={table.getColumn("order_status")}
-          title="Status"
+          options={[
+            { value: "male", label: "Male", color: "info" },
+            { value: "female", label: "Female", color: "warning" },
+          ]}
+          column={table.getColumn("gender")}
+          title="Gender"
           Icon={MapPinIcon}
         />
       )}
 
-      {table.getColumn("created_at") && (
+      {table.getColumn("dob") && (
         <DateFilter
-          column={table.getColumn("created_at")}
-          title="Order Date Range"
+          column={table.getColumn("dob")}
+          title="Date of Birth"
           config={{
             maxDate: new Date().fp_incr(1),
             mode: "range",
           }}
-        />
-      )}
-
-      {table.getColumn("total") && (
-        <RangeFilter
-          column={table.getColumn("total")}
-          title="Total Amount"
-          Icon={TbCurrencyDollar}
-          MinPrefixIcon={TbCurrencyDollar}
-          MaxPrefixIcon={TbCurrencyDollar}
-          buttonText={({ min, max }) => (
-            <>
-              {min && <>From ${min}</>}
-              {min && max && " - "}
-              {max && <>To ${max}</>}
-            </>
-          )}
         />
       )}
 

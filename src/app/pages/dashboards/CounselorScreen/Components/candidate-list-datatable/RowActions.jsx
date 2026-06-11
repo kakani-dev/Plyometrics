@@ -13,6 +13,7 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+import { NotebookText } from "lucide-react";
 import clsx from "clsx";
 import { Fragment, useCallback, useState } from "react";
 import PropTypes from "prop-types";
@@ -20,7 +21,8 @@ import PropTypes from "prop-types";
 // Local Imports
 import { ConfirmModal } from "components/shared/ConfirmModal";
 import { Button } from "components/ui";
-import { OrdersDrawer } from "./OrdersDrawer";
+import { ExamGenerationDrawer } from "./ExamGenerationDrawer";
+import { CandidateDrawer } from "./CandidateDrawer";
 import { useDisclosure } from "hooks";
 
 // ----------------------------------------------------------------------
@@ -28,10 +30,10 @@ import { useDisclosure } from "hooks";
 const confirmMessages = {
   pending: {
     description:
-      "Are you sure you want to delete this order? Once deleted, it cannot be restored.",
+      "Are you sure you want to delete this candidate? Once deleted, it cannot be restored.",
   },
   success: {
-    title: "Order Deleted",
+    title: "Candidate Deleted",
   },
 };
 
@@ -42,6 +44,8 @@ export function RowActions({ row, table }) {
   const [deleteError, setDeleteError] = useState(false);
 
   const [isDrawerOpen, { close: closeDrawer, open: openDrawer }] =
+    useDisclosure(false);
+  const [isExamDrawerOpen, { close: closeExamDrawer, open: openExamDrawer }] =
     useDisclosure(false);
 
   const closeModal = () => {
@@ -125,6 +129,21 @@ export function RowActions({ row, table }) {
               <MenuItem>
                 {({ focus }) => (
                   <button
+                    onClick={() => openExamDrawer()}
+                    className={clsx(
+                      "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
+                      focus &&
+                        "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
+                    )}
+                  >
+                    <NotebookText className="size-4.5 stroke-1" />
+                    <span>Exam Generation</span>
+                  </button>
+                )}
+              </MenuItem>
+              <MenuItem>
+                {({ focus }) => (
+                  <button
                     onClick={openModal}
                     className={clsx(
                       "this:error flex h-9 w-full items-center space-x-3 px-3 tracking-wide text-this outline-hidden transition-colors dark:text-this-light ",
@@ -150,7 +169,8 @@ export function RowActions({ row, table }) {
         state={state}
       />
 
-      <OrdersDrawer row={row} close={closeDrawer} isOpen={isDrawerOpen} />
+      <CandidateDrawer row={row} close={closeDrawer} isOpen={isDrawerOpen} />
+      <ExamGenerationDrawer row={row} close={closeExamDrawer} isOpen={isExamDrawerOpen} />
     </>
   );
 }

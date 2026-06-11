@@ -22,8 +22,8 @@
 
 ## Tables
 
-- **Table Columns**: Table column headers should include relevant icons
-- **Table Edit**: Use `src/components/shared/MasterFormDrawer.jsx` for edit forms in tables
+- **Table Columns**: Table column headers should include  lucide-react relevant icons
+
 - **Margin/Padding**: Use `px-2` instead of `px-(--margin-x)` for table and toolbar horizontal padding
 - **Row Density**: Always default `enableRowDense` to `true` in table settings state
 

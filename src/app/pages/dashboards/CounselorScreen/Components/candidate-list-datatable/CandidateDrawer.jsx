@@ -17,7 +17,7 @@ import { useLocaleContext } from "app/contexts/locale/context";
 // ----------------------------------------------------------------------
 
 
-export function OrdersDrawer({ isOpen, close, row }) {
+export function CandidateDrawer({ isOpen, close, row }) {
   const { locale } = useLocaleContext();
   const date = row.original.dob ? dayjs(row.original.dob).locale(locale).format("DD MMM YYYY") : "";
 
@@ -100,7 +100,7 @@ export function OrdersDrawer({ isOpen, close, row }) {
   );
 }
 
-OrdersDrawer.propTypes = {
+CandidateDrawer.propTypes = {
   isOpen: PropTypes.bool,
   close: PropTypes.func,
   row: PropTypes.object,
