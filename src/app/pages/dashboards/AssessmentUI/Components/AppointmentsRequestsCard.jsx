@@ -16,6 +16,7 @@ export function AppointmentsRequestsCard({
   avatar,
   email,
   testName,
+  isCompleted,
   onSelect,
 }) {
   return (
@@ -30,9 +31,16 @@ export function AppointmentsRequestsCard({
           <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-dark-300">
             {email}
           </p>
-          <p className="mt-1 truncate text-xs font-semibold text-primary">
-            {testName}
-          </p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="truncate text-xs font-semibold text-primary">
+              {testName}
+            </span>
+            {isCompleted && (
+              <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium border border-emerald-200 dark:border-emerald-900/30">
+                Completed
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -44,6 +52,7 @@ export function AppointmentsRequestsCard({
             color="success"
             variant="soft"
             onClick={onSelect}
+            disabled={isCompleted}
           >
             <CheckIcon className="size-4" />
           </Button>
@@ -52,6 +61,7 @@ export function AppointmentsRequestsCard({
             isIcon
             color="error"
             variant="soft"
+            disabled={isCompleted}
           >
             <XMarkIcon className="size-4" />
           </Button>
@@ -69,5 +79,6 @@ AppointmentsRequestsCard.propTypes = {
   avatar: PropTypes.string,
   email: PropTypes.string,
   testName: PropTypes.string,
+  isCompleted: PropTypes.bool,
   onSelect: PropTypes.func,
 };

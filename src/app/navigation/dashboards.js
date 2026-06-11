@@ -55,6 +55,14 @@ export const dashboards = {
             Icon: ClipboardDocumentListIcon,
         },
         {
+            id: 'dashboards.examGenerator',
+            path: path(ROOT_DASHBOARDS, '/exam-generator'),
+            type: NAV_TYPE_ITEM,
+            title: 'Exam Generator',
+            transKey: 'nav.dashboards.examGenerator',
+            Icon: DocumentTextIcon,
+        },
+        {
             id: 'dashboards.report',
             path: path(ROOT_DASHBOARDS, '/report'),
             type: NAV_TYPE_ITEM,

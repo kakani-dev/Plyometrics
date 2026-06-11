@@ -1,24 +1,96 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, Radio, Button, Progress } from "components/ui";
 import { ClockIcon, ArrowRightIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
-import questionsData from "./psychometrictest.json";
-import { TIME_THRESHOLDS } from "./data";
 import { Welcome } from "./Welcome";
+import {
+  getExamPattern,
+  submitAnswers,
+} from "app/contexts/api/allapis";
+
+const DEFAULT_THRESHOLDS = {
+  Easy: { min: 5, med: 15, max: 30 },
+  Medium: { min: 10, med: 30, max: 60 },
+  Hard: { min: 20, med: 60, max: 120 },
+};
 
 
 export function PsychometricTestCard({ testData, onBack }) {
+  const [questions, setQuestions] = useState([]);
+  const [thresholdsMap, setThresholdsMap] = useState(null);
+  const [examInfo, setExamInfo] = useState({ testName: "", userName: "" });
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [questionStartTime, setQuestionStartTime] = useState(() => new Date());
   const [totalTime, setTotalTime] = useState(0);
-  
-  const currentQuestion = questionsData[currentIndex];
+
+  const currentQuestion = questions[currentIndex];
   const difficulty = currentQuestion?.Difficulty || "Medium";
-  const thresholds = TIME_THRESHOLDS[difficulty] || TIME_THRESHOLDS.Medium;
-  
+  const thresholds = (thresholdsMap || DEFAULT_THRESHOLDS)[difficulty] || DEFAULT_THRESHOLDS.Medium;
+
   const [timeLeft, setTimeLeft] = useState(thresholds.max);
   const [logs, setLogs] = useState([]);
   const [testCompleted, setTestCompleted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await getExamPattern(testData?.testId || 1, testData?.uid || 1);
+        if (!active) return;
+        const d = res?.data;
+        if (d) {
+          const normalized = (d.questions || []).map(q => ({
+            ...q,
+            QID: q.qid,
+            Question: q.question,
+            Difficulty: q.difficulty,
+          }));
+          if (active) {
+            setQuestions(normalized);
+            setThresholdsMap(d.timeThresholds);
+            setExamInfo({ testName: d.testName, userName: d.userName });
+            
+            // Correctly initialize time left and start time based on the first question's difficulty
+            const firstQuestion = normalized[0];
+            const firstDiff = firstQuestion?.Difficulty || "Medium";
+            const firstThresh = (d.timeThresholds || DEFAULT_THRESHOLDS)[firstDiff] || DEFAULT_THRESHOLDS.Medium;
+            setTimeLeft(firstThresh.max);
+            setQuestionStartTime(new Date());
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch exam pattern:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [testData]);
+
+  const submitTest = useCallback(async (answers, totalTimeSeconds) => {
+    setSubmitting(true);
+    try {
+      const payload = {
+        testId: testData?.testId || 1,
+        candidateId: testData?.uid || 1,
+        totalTimeTakenSeconds: totalTimeSeconds,
+        answers: answers.map(a => ({
+          qid: a.qid,
+          selectedAnswer: a.selectedAnswer,
+          timeTakenSeconds: a.durationSeconds,
+        })),
+      };
+      await submitAnswers(payload);
+    } catch (err) {
+      console.error("Failed to submit answers:", err);
+    } finally {
+      setSubmitting(false);
+      setTestCompleted(true);
+    }
+  }, [testData]);
 
   // Handle automatic skipping when max time is reached
   const handleAutoSkip = useCallback(() => {
@@ -26,6 +98,7 @@ export function PsychometricTestCard({ testData, onBack }) {
     const endTime = new Date();
     const durationMs = endTime - questionStartTime;
     const durationMinutes = parseFloat((durationMs / 60000).toFixed(4));
+    const durationSeconds = parseFloat((durationMs / 1000).toFixed(2));
 
     const newLog = {
       qid: currentQuestion.QID,
@@ -34,27 +107,27 @@ export function PsychometricTestCard({ testData, onBack }) {
       startedAt: questionStartTime.toISOString(),
       endedAt: endTime.toISOString(),
       durationMinutes,
-      durationSeconds: parseFloat((durationMs / 1000).toFixed(2)),
+      durationSeconds,
       selectedAnswer: "AUTO_SKIPPED_TIMEOUT",
       status: "Skipped (Timeout)",
     };
 
-    setLogs((prev) => [...prev, newLog]);
+    const updatedLogs = [...logs, newLog];
+    setLogs(updatedLogs);
 
-    // Move to next question or complete
-    if (currentIndex < questionsData.length - 1) {
+    if (currentIndex < questions.length - 1) {
       const nextIndex = currentIndex + 1;
-      const nextQuestion = questionsData[nextIndex];
+      const nextQuestion = questions[nextIndex];
       const nextDifficulty = nextQuestion?.Difficulty || "Medium";
-      const nextThresholds = TIME_THRESHOLDS[nextDifficulty] || TIME_THRESHOLDS.Medium;
+      const nextThresholds = (thresholdsMap || DEFAULT_THRESHOLDS)[nextDifficulty] || DEFAULT_THRESHOLDS.Medium;
       
       setCurrentIndex(nextIndex);
       setQuestionStartTime(new Date());
       setTimeLeft(nextThresholds.max);
     } else {
-      setTestCompleted(true);
+      submitTest(updatedLogs, totalTime);
     }
-  }, [currentIndex, currentQuestion, difficulty, thresholds, questionStartTime]);
+  }, [currentIndex, currentQuestion, difficulty, thresholds, questionStartTime, logs, totalTime, submitTest, questions, thresholdsMap]);
 
   // Handle user submitting/moving next
   const handleNext = useCallback(() => {
@@ -63,6 +136,7 @@ export function PsychometricTestCard({ testData, onBack }) {
     const endTime = new Date();
     const durationMs = endTime - questionStartTime;
     const durationMinutes = parseFloat((durationMs / 60000).toFixed(4));
+    const durationSeconds = parseFloat((durationMs / 1000).toFixed(2));
     const answer = selectedAnswers[currentQuestion.QID] || "";
 
     const newLog = {
@@ -72,29 +146,27 @@ export function PsychometricTestCard({ testData, onBack }) {
       startedAt: questionStartTime.toISOString(),
       endedAt: endTime.toISOString(),
       durationMinutes,
-      durationSeconds: parseFloat((durationMs / 1000).toFixed(2)),
+      durationSeconds,
       selectedAnswer: answer,
       status: answer ? "Answered" : "Skipped (Manual)",
     };
 
-    setLogs((prev) => {
-      const filtered = prev.filter((l) => l.qid !== currentQuestion.QID);
-      return [...filtered, newLog];
-    });
+    const updatedLogs = [...logs.filter((l) => l.qid !== currentQuestion.QID), newLog];
+    setLogs(updatedLogs);
 
-    if (currentIndex < questionsData.length - 1) {
+    if (currentIndex < questions.length - 1) {
       const nextIndex = currentIndex + 1;
-      const nextQuestion = questionsData[nextIndex];
+      const nextQuestion = questions[nextIndex];
       const nextDifficulty = nextQuestion?.Difficulty || "Medium";
-      const nextThresholds = TIME_THRESHOLDS[nextDifficulty] || TIME_THRESHOLDS.Medium;
+      const nextThresholds = (thresholdsMap || DEFAULT_THRESHOLDS)[nextDifficulty] || DEFAULT_THRESHOLDS.Medium;
 
       setCurrentIndex(nextIndex);
       setQuestionStartTime(new Date());
       setTimeLeft(nextThresholds.max);
     } else {
-      setTestCompleted(true);
+      submitTest(updatedLogs, totalTime);
     }
-  }, [currentIndex, currentQuestion, difficulty, thresholds, questionStartTime, selectedAnswers]);
+  }, [currentIndex, currentQuestion, thresholds, questionStartTime, selectedAnswers, logs, totalTime, submitTest, questions, thresholdsMap]);
 
   // Timer effect: Only decrements the count down timer and increments total exam time
   useEffect(() => {
@@ -131,30 +203,41 @@ export function PsychometricTestCard({ testData, onBack }) {
     setTestCompleted(false);
     setQuestionStartTime(new Date());
     setTotalTime(0);
-    const initialDifficulty = questionsData[0]?.Difficulty || "Medium";
-    setTimeLeft((TIME_THRESHOLDS[initialDifficulty] || TIME_THRESHOLDS.Medium).max);
+    setSubmitting(false);
+    const initialDifficulty = questions[0]?.Difficulty || "Medium";
+    setTimeLeft(((thresholdsMap || DEFAULT_THRESHOLDS)[initialDifficulty] || DEFAULT_THRESHOLDS.Medium).max);
   };
 
   // Options configuration based on question type
   const renderOptions = () => {
     if (currentQuestion["Question Type"] === "Likert") {
-      const likertOptions = [
-        { label: "Strongly Disagree", value: "1" },
-        { label: "Disagree", value: "2" },
-        { label: "Neutral", value: "3" },
-        { label: "Agree", value: "4" },
-        { label: "Strongly Agree", value: "5" },
-      ];
+      let likertOptions = [
+        { key: "A", label: currentQuestion["Option A"] },
+        { key: "B", label: currentQuestion["Option B"] },
+        { key: "C", label: currentQuestion["Option C"] },
+        { key: "D", label: currentQuestion["Option D"] },
+        { key: "E", label: currentQuestion["Option E"] },
+      ].filter((opt) => opt.label && opt.label.trim() !== "");
+
+      if (likertOptions.length === 0) {
+        likertOptions = [
+          { key: "A", label: "Strongly Disagree" },
+          { key: "B", label: "Disagree" },
+          { key: "C", label: "Neutral" },
+          { key: "D", label: "Agree" },
+          { key: "E", label: "Strongly Agree" },
+        ];
+      }
 
       return (
         <div className="flex flex-col gap-3 mt-4">
           {likertOptions.map((opt) => (
             <Radio
-              key={opt.value}
+              key={opt.key}
               name={currentQuestion.QID}
               label={opt.label}
-              checked={selectedAnswers[currentQuestion.QID] === opt.value}
-              onChange={() => handleRadioChange(opt.value)}
+              checked={selectedAnswers[currentQuestion.QID] === opt.key}
+              onChange={() => handleRadioChange(opt.key)}
               className="size-5"
             />
           ))}
@@ -223,6 +306,10 @@ export function PsychometricTestCard({ testData, onBack }) {
     );
   }
 
+  if (loading) {
+    return <div className="text-center py-10 text-gray-500 dark:text-dark-300">Loading questions...</div>;
+  }
+
   if (!currentQuestion) {
     return <div>No questions found.</div>;
   }
@@ -241,8 +328,8 @@ export function PsychometricTestCard({ testData, onBack }) {
 
 
         <Welcome 
-          testName={testData?.testName || "Psychometric Assessment Test"} 
-          userName={testData?.name || "Travis Fuller"} 
+          testName={examInfo.testName || testData?.testName || "Psychometric Assessment Test"} 
+          userName={examInfo.userName || testData?.name || "Travis Fuller"} 
           totalTime={totalTime} 
         />
       <Card className="p-6 relative overflow-hidden flex flex-col justify-between min-h-[400px]">
@@ -256,7 +343,7 @@ export function PsychometricTestCard({ testData, onBack }) {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-4 mb-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-400 dark:text-dark-300">
-                Question {currentIndex + 1} of {questionsData.length}
+                Question {currentIndex + 1} of {questions.length}
               </span>
             </div>
 
@@ -282,15 +369,21 @@ export function PsychometricTestCard({ testData, onBack }) {
         {/* Action buttons */}
         <div className="flex justify-end items-center pt-6 mt-6 border-t">
           <div className="flex gap-2">
+            {submitting && (
+              <span className="text-sm text-gray-400 dark:text-dark-300 self-center">
+                Submitting...
+              </span>
+            )}
             <Button
               onClick={handleAutoSkip}
               variant="outlined"
               color="warning"
+              disabled={submitting}
             >
               Skip Question
             </Button>
-            <Button onClick={handleNext} color="primary">
-              {currentIndex === questionsData.length - 1 ? "Finish" : "Next"}
+            <Button onClick={handleNext} color="primary" disabled={submitting}>
+              {currentIndex === questions.length - 1 ? "Finish" : "Next"}
               <ArrowRightIcon className="size-4 ml-2" />
             </Button>
           </div>

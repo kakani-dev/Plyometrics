@@ -58,6 +58,12 @@ const protectedRoutes = {
               }),
             },
             {
+              path: "exam-generator",
+              lazy: async () => ({
+                Component: (await import("app/pages/dashboards/ExamGenerator")).default,
+              }),
+            },
+            {
               path: "report",
               lazy: async () => ({
                 Component: (await import("app/pages/dashboards/CombinedReport")).default,

@@ -1,10 +1,8 @@
-import { Card, Input, Select, Checkbox, Radio, Button } from "components/ui";
+import { Card, Input, Checkbox, Radio, Button } from "components/ui";
 import { 
   UserIcon, 
   EnvelopeIcon, 
-  PhoneIcon, 
-  AcademicCapIcon, 
-  BriefcaseIcon
+  PhoneIcon
 } from "@heroicons/react/24/outline";
 
 export function RegistrationForm({
@@ -14,9 +12,8 @@ export function RegistrationForm({
   handleSubmit,
   handleReset,
   completionPercentage,
-  examOptions,
-  educationOptions,
-  experienceOptions
+  isSubmitting,
+  submitError
 }) {
   return (
     <Card skin="shadow" className="p-6 sm:p-8 bg-white dark:bg-dark-700">
@@ -35,6 +32,7 @@ export function RegistrationForm({
               value={formValues.fullName}
               onChange={handleInputChange}
               error={errors.fullName}
+              className="h-8 py-1 text-xs"
             />
             <Input
               label="Date of Birth *"
@@ -43,6 +41,7 @@ export function RegistrationForm({
               value={formValues.dob}
               onChange={handleInputChange}
               error={errors.dob}
+              className="h-8 py-1 text-xs"
             />
           </div>
 
@@ -97,6 +96,7 @@ export function RegistrationForm({
               value={formValues.email}
               onChange={handleInputChange}
               error={errors.email}
+              className="h-8 py-1 text-xs"
             />
             <Input
               label="Phone Number *"
@@ -106,43 +106,7 @@ export function RegistrationForm({
               value={formValues.phone}
               onChange={handleInputChange}
               error={errors.phone}
-            />
-          </div>
-        </div>
-
-        <hr className="border-gray-150 dark:border-dark-600" />
-
-        {/* Section 3: Assessment Assignment & Experience */}
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-primary-500 mb-4">
-            3. Assignment & Background
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select
-              label="Assigned Test *"
-              name="examType"
-              value={formValues.examType}
-              onChange={handleInputChange}
-              data={examOptions}
-              prefix={<BriefcaseIcon className="w-4 h-4 text-gray-400" />}
-            />
-            <Select
-              label="Highest Education"
-              name="education"
-              value={formValues.education}
-              onChange={handleInputChange}
-              data={educationOptions}
-              prefix={<AcademicCapIcon className="w-4 h-4 text-gray-400" />}
-            />
-          </div>
-          
-          <div className="mt-4">
-            <Select
-              label="Years of Experience"
-              name="experience"
-              value={formValues.experience}
-              onChange={handleInputChange}
-              data={experienceOptions}
+              className="h-8 py-1 text-xs"
             />
           </div>
         </div>
@@ -161,12 +125,19 @@ export function RegistrationForm({
           />
         </div>
 
+        {submitError && (
+          <div className="text-red-500 text-xs mt-2 font-medium bg-red-50 dark:bg-red-950/20 p-2.5 rounded border border-red-200 dark:border-red-900/50">
+            {submitError}
+          </div>
+        )}
+
         {/* Form Controls */}
         <div className="flex items-center justify-end gap-3 pt-4">
           <Button 
             variant="outlined" 
             color="neutral" 
             onClick={handleReset}
+            disabled={isSubmitting}
           >
             Reset
           </Button>
@@ -174,9 +145,9 @@ export function RegistrationForm({
             type="submit" 
             color="primary" 
             isGlow
-            disabled={completionPercentage < 100}
+            disabled={completionPercentage < 100 || isSubmitting}
           >
-            Register Candidate
+            {isSubmitting ? "Registering..." : "Register Candidate"}
           </Button>
         </div>
       </form>

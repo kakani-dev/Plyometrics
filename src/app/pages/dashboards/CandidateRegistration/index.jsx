@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Page } from "components/shared/Page";
-import { Card } from "components/ui";
 
 // Local imports of modular sub-components
-import { RegistrationProgress } from "./Components/RegistrationProgress";
 import { RegistrationForm } from "./Components/RegistrationForm";
 import { SuccessTicket } from "./Components/SuccessTicket";
+import { createCandidate } from "app/contexts/api/allapis";
 
 export default function CandidateRegistration() {
   const [formValues, setFormValues] = useState({
@@ -22,6 +21,8 @@ export default function CandidateRegistration() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [ticketId, setTicketId] = useState("");
 
   const examOptions = [
@@ -29,21 +30,6 @@ export default function CandidateRegistration() {
     { label: "Aptitude & Logical Reasoning", value: "aptitude" },
     { label: "Technical Coding Challenge", value: "technical" },
     { label: "Leadership & Management Profile", value: "leadership" }
-  ];
-
-  const educationOptions = [
-    { label: "High School / Secondary", value: "highschool" },
-    { label: "Diploma", value: "diploma" },
-    { label: "Bachelor's Degree", value: "bachelors" },
-    { label: "Master's Degree", value: "masters" },
-    { label: "Ph.D. / Doctorate", value: "phd" }
-  ];
-
-  const experienceOptions = [
-    { label: "Fresh Graduate (0 years)", value: "0" },
-    { label: "1 - 2 Years", value: "1-2" },
-    { label: "3 - 5 Years", value: "3-5" },
-    { label: "5+ Years", value: "5+" }
   ];
 
   const validateField = (name, value) => {
@@ -87,19 +73,18 @@ export default function CandidateRegistration() {
   };
 
   // Calculate completion percentage
-  const totalFields = 6; // name, email, phone, dob, agreed, examType
+  const totalFields = 5; // name, email, phone, dob, agreed
   const completedFields = [
     formValues.fullName.trim() !== "",
     formValues.email.trim() !== "" && /\S+@\S+\.\S+/.test(formValues.email),
     formValues.phone.trim() !== "" && /^\+?[0-9\s-]{8,15}$/.test(formValues.phone),
     formValues.dob !== "",
-    formValues.examType !== "",
     formValues.agreed === true
   ].filter(Boolean).length;
   
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const newErrors = {};
@@ -115,10 +100,30 @@ export default function CandidateRegistration() {
       return;
     }
 
-    // Generate random Ticket ID
-    const randomId = "PLY-" + Math.floor(100000 + Math.random() * 900000);
-    setTicketId(randomId);
-    setIsSubmitted(true);
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const payload = {
+        name: formValues.fullName,
+        dob: formValues.dob ? new Date(formValues.dob).toISOString() : null,
+        email: formValues.email,
+        mobilenumber: formValues.phone,
+        gender: formValues.gender
+      };
+
+      const response = await createCandidate(payload);
+
+      // Generate random Ticket ID or use returned ID if available
+      const randomId = response?.id ? `PLY-${response.id}` : "PLY-" + Math.floor(100000 + Math.random() * 900000);
+      setTicketId(randomId);
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      setSubmitError(err?.response?.data?.message || err?.message || "Failed to create candidate");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -135,6 +140,7 @@ export default function CandidateRegistration() {
     });
     setErrors({});
     setIsSubmitted(false);
+    setSubmitError("");
   };
 
   return (
@@ -152,40 +158,19 @@ export default function CandidateRegistration() {
           </div>
         </div>
 
-        {/* Outer Grid */}
-        <div className="max-w-4xl mx-auto">
+        {/* Form Container */}
+        <div className="max-w-2xl mx-auto">
           {!isSubmitted ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {/* Left Column: Form completion strength & details */}
-              <div className="lg:col-span-1 space-y-6">
-                <RegistrationProgress
-                  completionPercentage={completionPercentage}
-                  formValues={formValues}
-                />
-
-                <Card skin="bordered" className="p-5 hidden lg:block bg-gray-50 dark:bg-dark-750/30">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Instructions</h4>
-                  <p className="text-xs text-gray-500 dark:text-dark-300 leading-relaxed">
-                    Ensure the email and mobile number are accurate. The candidate will receive a unique access token and dashboard link to complete their assessment.
-                  </p>
-                </Card>
-              </div>
-
-              {/* Right Column: Actual Registration Form */}
-              <div className="lg:col-span-2">
-                <RegistrationForm
-                  formValues={formValues}
-                  errors={errors}
-                  handleInputChange={handleInputChange}
-                  handleSubmit={handleSubmit}
-                  handleReset={handleReset}
-                  completionPercentage={completionPercentage}
-                  examOptions={examOptions}
-                  educationOptions={educationOptions}
-                  experienceOptions={experienceOptions}
-                />
-              </div>
-            </div>
+            <RegistrationForm
+              formValues={formValues}
+              errors={errors}
+              handleInputChange={handleInputChange}
+              handleSubmit={handleSubmit}
+              handleReset={handleReset}
+              completionPercentage={completionPercentage}
+              isSubmitting={isSubmitting}
+              submitError={submitError}
+            />
           ) : (
             /* Premium Success Ticket Confirmation View */
             <SuccessTicket

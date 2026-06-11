@@ -1,33 +1,40 @@
-// Local Imports
+import { useState, useEffect } from "react";
 import { AppointmentsRequestsCard } from "./AppointmentsRequestsCard";
-
-const requests = [
-  {
-    uid: 1,
-    name: "Travis Fuller",
-    avatar: "/images/avatar/avatar-19.jpg",
-    email: "travis.fuller@example.com",
-    testName: "Psychometric Cognitive Test",
-  },
-  {
-    uid: 2,
-    name: "Travis Fuller",
-    avatar: "/images/avatar/avatar-19.jpg",
-    email: "travis.fuller@example.com",
-    testName: "Behavioral Tendency Assessment",
-  },
-  {
-    uid: 3,
-    name: "Travis Fuller",
-    avatar: "/images/avatar/avatar-19.jpg",
-    email: "travis.fuller@example.com",
-    testName: "Leadership Aptitude Test",
-  }
-];
-
-// ----------------------------------------------------------------------
+import { getAppointmentsRequestsList } from "app/contexts/api/allapis";
 
 export function AppointmentsRequestsList({ onSelectTest }) {
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await getAppointmentsRequestsList();
+        const data = res?.data;
+        if (active && data) {
+          const candidates = Array.isArray(data) ? data : [data];
+          const flattened = candidates.flatMap((candidate) =>
+            (candidate.tests || []).map((test) => ({
+              uid: candidate.uid,
+              name: candidate.name,
+              email: candidate.email,
+              avatar: candidate.avatar,
+              testId: test.testId,
+              testName: test.testName,
+              examDate: test.examDate,
+              totalTestTime: test.totalTestTime,
+              isCompleted: test.isCompleted,
+            }))
+          );
+          setRequests(flattened);
+        }
+      } catch (err) {
+        console.error("Failed to fetch appointments:", err);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
   return (
     <div className="mt-4 sm:mt-5 lg:mt-6">
       <div className="flex h-8 items-center justify-between">
@@ -37,11 +44,12 @@ export function AppointmentsRequestsList({ onSelectTest }) {
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
         {requests.map((request) => (
           <AppointmentsRequestsCard
-            key={request.uid}
+            key={`${request.uid}-${request.testId}`}
             name={request.name}
             avatar={request.avatar}
             email={request.email}
             testName={request.testName}
+            isCompleted={request.isCompleted}
             onSelect={() => onSelectTest && onSelectTest(request)}
           />
         ))}

@@ -1,4 +1,12 @@
 import { ArrowPathIcon, CheckBadgeIcon, ClockIcon, TruckIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import axios from 'axios';
+import { NEUROPI_API_BASE } from 'configs/auth.config';
+
+export async function getCandidatesByTenant(tenantId = 1) {
+    const { data } = await axios.get(`${NEUROPI_API_BASE}/api/PyCandidateService/by-tenant/${tenantId}`);
+    return data;
+}
+
 
 export const orderStatusOptions = [
     {

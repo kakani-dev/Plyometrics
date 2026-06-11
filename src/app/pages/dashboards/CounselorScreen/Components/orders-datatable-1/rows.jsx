@@ -53,7 +53,7 @@ export function CustomerCell({ row, getValue, column, table }) {
       <Avatar
         size={9}
         name={name}
-        src={row.original.customer.avatar_img}
+        src={row.original.customer?.avatar_img || row.original.avatar_img}
         classNames={{
           display: "mask is-squircle rounded-none text-sm",
         }}
@@ -88,11 +88,27 @@ export function ProfitCell({ getValue, row }) {
 
 export function OrderStatusCell({ getValue, row, column, table }) {
   const val = getValue();
-  const option = orderStatusOptions.find((item) => item.value === val);
+  const isGender = column.id === "gender";
+
+  const options = isGender
+    ? [
+        { value: "male", label: "Male", color: "info" },
+        { value: "female", label: "Female", color: "warning" },
+      ]
+    : orderStatusOptions;
+
+  const normalizedVal = val ? String(val).toLowerCase() : "";
+  const option = options.find(
+    (item) => item.value.toLowerCase() === normalizedVal
+  ) || {
+    value: val,
+    label: val || "",
+    color: "primary",
+  };
 
   const handleChangeStatus = (status) => {
     table.options.meta?.updateData(row.index, column.id, status);
-    toast.success(`Order status updated to ${option.label}`);
+    toast.success(`${isGender ? "Gender" : "Order status"} updated to ${status}`);
   };
 
   return (
@@ -118,7 +134,7 @@ export function OrderStatusCell({ getValue, row, column, table }) {
         anchor={{ to: "bottom start", gap: "8px" }}
         className="max-h-60 z-100 w-40 overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-xs-plus capitalize shadow-soft outline-hidden focus-visible:outline-hidden dark:border-dark-500 dark:bg-dark-750 dark:shadow-none"
       >
-        {orderStatusOptions.map((item) => (
+        {options.map((item) => (
           <ListboxOption
             key={item.value}
             value={item.value}
