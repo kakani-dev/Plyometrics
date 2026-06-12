@@ -27,6 +27,16 @@
 - **Margin/Padding**: Use `px-2` instead of `px-(--margin-x)` for table and toolbar horizontal padding
 - **Row Density**: Always default `enableRowDense` to `true` in table settings state
 
+## Spinner / Loader
+
+- **Shared Spinner**: Use `SoftColorSpinner` from `components/shared/SoftColorSpinner` for loading states that need soft variant colored spinners
+- **GhostSpinner**: Use `GhostSpinner` from `components/ui` for spinners on dark/colored backgrounds (e.g., buttons)
+
+## Data Refresh
+
+- **Mutation-triggered refresh**: Pages that display data after mutations (add/edit/delete) must use a `refreshKey` state + `onDataChange` callback pattern
+- **Pattern**: `refreshKey` state in the parent page increments to re-trigger `useEffect` fetches; `onDataChange` callback is passed down through component tree and called after successful mutations
+
 ## Build
 
 - **Build**: After any code changes, build the project and verify there are no errors before finalizing. Use `$env:DISABLE_ESLINT_PLUGIN="true"; yarn build --logLevel error` to ignore warnings for a fast build

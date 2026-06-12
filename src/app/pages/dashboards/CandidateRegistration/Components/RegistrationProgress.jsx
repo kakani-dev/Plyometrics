@@ -1,9 +1,11 @@
 import { Card } from "components/ui";
+import { ClipboardList } from "lucide-react";
 
 export function RegistrationProgress({ completionPercentage, formValues }) {
   return (
     <Card skin="shadow" className="p-5 bg-gradient-to-br from-primary-500/10 via-transparent to-transparent border border-primary-500/20">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-dark-50 mb-3">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-dark-50 mb-3 flex items-center gap-2">
+        <ClipboardList className="w-4 h-4 text-primary-500" />
         Registration Progress
       </h3>
       <div className="relative pt-1">

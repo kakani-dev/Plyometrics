@@ -30,7 +30,7 @@ const difficultyOptions = [
 
 // ----------------------------------------------------------------------
 
-export function ExamGenerationDrawer({ isOpen, close, row }) {
+export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
   const [existingExams, setExistingExams] = useState([]);
   const [loadingExams, setLoadingExams] = useState(false);
   const [difficulties, setDifficulties] = useState([]);
@@ -146,13 +146,14 @@ export function ExamGenerationDrawer({ isOpen, close, row }) {
         payloadPreview,
       );
       toast.success("Exam generated successfully");
+      onDataChange?.();
       close();
     } catch {
       toast.error("Failed to generate exam");
     } finally {
       setSubmitting(false);
     }
-  }, [payloadPreview, close]);
+  }, [payloadPreview, close, onDataChange]);
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -387,4 +388,5 @@ ExamGenerationDrawer.propTypes = {
   isOpen: PropTypes.bool,
   close: PropTypes.func,
   row: PropTypes.object,
+  onDataChange: PropTypes.func,
 };

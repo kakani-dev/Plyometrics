@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Page } from "components/shared/Page";
+import { UserPlus } from "lucide-react";
 
 // Local imports of modular sub-components
 import { RegistrationForm } from "./Components/RegistrationForm";
@@ -150,7 +151,8 @@ export default function CandidateRegistration() {
         {/* Page Title & Header */}
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="truncate text-xl font-semibold tracking-wide text-gray-800 dark:text-dark-50">
+            <h2 className="truncate text-xl font-semibold tracking-wide text-gray-800 dark:text-dark-50 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary-500" />
               Candidate Registration
             </h2>
             <p className="text-sm text-gray-500 dark:text-dark-300">

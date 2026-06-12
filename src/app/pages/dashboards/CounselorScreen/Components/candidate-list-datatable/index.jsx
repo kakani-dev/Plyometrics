@@ -30,7 +30,7 @@ import { getUserAgentBrowser } from "utils/dom/getUserAgentBrowser";
 
 const isSafari = getUserAgentBrowser() === "Safari";
 
-export default function CandidateListDatatable({ candidates, setCandidates }) {
+export default function CandidateListDatatable({ candidates, setCandidates, onDataChange }) {
   const { cardSkin } = useThemeContext();
 
   const [tableSettings, setTableSettings] = useState({
@@ -65,6 +65,7 @@ export default function CandidateListDatatable({ candidates, setCandidates }) {
       tableSettings,
     },
     meta: {
+      onDataChange,
       updateData: (rowIndex, columnId, value) => {
         // Skip page index reset until after next rerender
         skipAutoResetPageIndex();

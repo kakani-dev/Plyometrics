@@ -170,7 +170,7 @@ export function RowActions({ row, table }) {
       />
 
       <CandidateDrawer row={row} close={closeDrawer} isOpen={isDrawerOpen} />
-      <ExamGenerationDrawer row={row} close={closeExamDrawer} isOpen={isExamDrawerOpen} />
+      <ExamGenerationDrawer row={row} close={closeExamDrawer} isOpen={isExamDrawerOpen} onDataChange={table.options.meta?.onDataChange} />
     </>
   );
 }

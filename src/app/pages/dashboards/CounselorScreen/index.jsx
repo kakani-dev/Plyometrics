@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NotebookText } from "lucide-react";
 import { Page } from "components/shared/Page";
 import { Overview } from "./Components/Overview";
@@ -7,6 +7,11 @@ import { getCandidatesByTenant } from "./Components/candidate-list-datatable/dat
 
 export default function CounselorScreen() {
   const [candidates, setCandidates] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refreshData = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -20,7 +25,7 @@ export default function CounselorScreen() {
       }
     };
     fetchCandidates();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <Page title="Counselor Screen">
@@ -31,8 +36,8 @@ export default function CounselorScreen() {
             Counselor Screen Page
           </h2>
         </div>
-        <Overview candidateCount={candidates.length} />
-        <CandidateListDatatable candidates={candidates} setCandidates={setCandidates} />
+        <Overview candidateCount={candidates.length} refreshKey={refreshKey} />
+        <CandidateListDatatable candidates={candidates} setCandidates={setCandidates} onDataChange={refreshData} />
       </div>
     </Page>
   );

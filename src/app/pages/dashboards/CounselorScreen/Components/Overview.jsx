@@ -14,7 +14,7 @@ import { NEUROPI_API_BASE } from "configs/auth.config";
 
 // ----------------------------------------------------------------------
 
-export function Overview({ candidateCount = 0 }) {
+export function Overview({ candidateCount = 0, refreshKey = 0 }) {
   const [stats, setStats] = useState({ totalSent: 0, completed: 0, pending: 0 });
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function Overview({ candidateCount = 0 }) {
       }
     };
     fetchStats();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">

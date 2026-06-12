@@ -10,8 +10,8 @@
       "userScreen": "User Screen",
       "counselorScreen": "Counselor Screen",
       "assessmentUi": "Assessment UI",
-      "candidateRegistration": "Counselor Screen",
-      "examGenerator": "Assessment UI"
+      "candidateRegistration": "Candidate Registration",
+      "examGenerator": "Exam Generator"
     },
     "settings": {
       "settings": "Settings",

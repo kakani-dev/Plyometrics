@@ -1,5 +1,5 @@
 import { Card, Button } from "components/ui";
-import { CheckCircleIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { CheckCircle, RefreshCw } from "lucide-react";
 
 export function SuccessTicket({ ticketId, formValues, examOptions, handleReset }) {
   return (
@@ -10,7 +10,7 @@ export function SuccessTicket({ ticketId, formValues, examOptions, handleReset }
         
         <div className="p-6 sm:p-8 flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-950/40 text-green-500 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
-            <CheckCircleIcon className="w-10 h-10" />
+            <CheckCircle className="w-10 h-10" />
           </div>
           
           <h3 className="text-xl font-bold text-gray-800 dark:text-dark-50">
@@ -96,7 +96,7 @@ export function SuccessTicket({ ticketId, formValues, examOptions, handleReset }
               className="w-full flex items-center justify-center gap-2"
               onClick={handleReset}
             >
-              <ArrowPathIcon className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" />
               Register Another
             </Button>
           </div>
