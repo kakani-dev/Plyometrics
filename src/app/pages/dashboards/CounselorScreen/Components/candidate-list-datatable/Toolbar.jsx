@@ -1,9 +1,9 @@
-// Import Dependencies
 import {
   ChevronUpDownIcon,
   MagnifyingGlassIcon,
   PrinterIcon,
   MapPinIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { TbUpload } from "react-icons/tb";
 import clsx from "clsx";
@@ -35,10 +35,11 @@ export function Toolbar({ table }) {
       <div
         className={clsx(
           "transition-content flex items-center justify-between gap-4",
-          isFullScreenEnabled ? "px-4 sm:px-5" : "px-(--margin-x) pt-4",
+          isFullScreenEnabled ? "px-4 sm:px-5" : "px-2 pt-4",
         )}
       >
-        <div className="min-w-0">
+        <div className="min-w-0 flex items-center gap-2">
+          <UsersIcon className="size-6 text-primary-600 dark:text-primary-400" />
           <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
             Candidates List
           </h2>
@@ -305,7 +306,7 @@ export function Toolbar({ table }) {
           <div
             className={clsx(
               "flex space-x-2 pt-4  [&_.input-root]:flex-1",
-              isFullScreenEnabled ? "px-4 sm:px-5" : "px-(--margin-x)",
+              isFullScreenEnabled ? "px-4 sm:px-5" : "px-2",
             )}
           >
             <SearchInput table={table} />
@@ -314,7 +315,7 @@ export function Toolbar({ table }) {
           <div
             className={clsx(
               "hide-scrollbar flex shrink-0 space-x-2 overflow-x-auto pb-1 pt-4 ",
-              isFullScreenEnabled ? "px-4 sm:px-5" : "px-(--margin-x)",
+              isFullScreenEnabled ? "px-4 sm:px-5" : "px-2",
             )}
           >
             <Filters table={table} />
@@ -324,7 +325,7 @@ export function Toolbar({ table }) {
         <div
           className={clsx(
             "custom-scrollbar transition-content flex justify-between space-x-4 overflow-x-auto pb-1 pt-4 ",
-            isFullScreenEnabled ? "px-4 sm:px-5" : "px-(--margin-x)",
+            isFullScreenEnabled ? "px-4 sm:px-5" : "px-2",
           )}
           style={{
             "--margin-scroll": isFullScreenEnabled

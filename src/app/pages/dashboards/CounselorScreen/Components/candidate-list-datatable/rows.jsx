@@ -9,7 +9,7 @@ import {
   ListboxOptions,
   Transition,
 } from "@headlessui/react";
-import { CheckIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, EnvelopeIcon, PhoneIcon, CakeIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 
 // Local Imports
@@ -33,12 +33,15 @@ export function DateCell({ getValue }) {
   const { locale } = useLocaleContext();
   const timestapms = getValue();
   const date = dayjs(timestapms).locale(locale).format("DD MMM YYYY");
-  const time = dayjs(timestapms).locale(locale).format("hh:mm A");
+  const age = dayjs().diff(dayjs(timestapms), "year");
   return (
-    <>
-      <p className="font-medium">{date}</p>
-      <p className="mt-0.5 text-xs text-gray-400 dark:text-dark-300">{time}</p>
-    </>
+    <div className="flex items-center gap-2">
+      <CakeIcon className="size-5 stroke-1 text-amber-500 dark:text-amber-400" />
+      <div>
+        <p className="font-medium">{date}</p>
+        <p className="mt-0.5 text-xs text-gray-400 dark:text-dark-300">Age: {age} years</p>
+      </div>
+    </div>
   );
 }
 
@@ -49,16 +52,18 @@ export function CustomerCell({ row, getValue, column, table }) {
   const name = getValue();
 
   return (
-    <div className="flex items-center space-x-4 ">
+    <div className="flex items-center space-x-4">
       <Avatar
         size={9}
         name={name}
+        initialColor="auto"
+        initialVariant="soft"
         src={row.original.customer?.avatar_img || row.original.avatar_img}
         classNames={{
-          display: "mask is-squircle rounded-none text-sm",
+          display: "mask is-squircle rounded-none text-sm font-semibold",
         }}
       />
-      <span className="font-medium text-gray-800 dark:text-dark-100">
+      <span className="font-semibold text-gray-800 dark:text-dark-100 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer transition-colors">
         <Highlight query={[globalQuery, columnQuery]}>{name}</Highlight>
       </span>
     </div>
@@ -69,18 +74,42 @@ export function EmailCell({ getValue }) {
   const email = getValue();
   return (
     <div className="flex items-center gap-2">
-      <EnvelopeIcon className="size-4.5 stroke-1 text-gray-400 dark:text-dark-300" />
+      <EnvelopeIcon className="size-4.5 stroke-1 text-red-500 dark:text-red-400" />
       <span className="text-gray-800 dark:text-dark-100">{email}</span>
     </div>
   );
+}
+
+function formatPhoneNumber(phoneNumberString) {
+  if (!phoneNumberString) return "";
+  const cleaned = ("" + phoneNumberString).replace(/\D/g, "");
+  if (cleaned.length === 10) {
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+  }
+  if (cleaned.length === 11 && cleaned.startsWith("1")) {
+    const match = cleaned.match(/^1(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `+1 (${match[1]}) ${match[2]}-${match[3]}`;
+    }
+  }
+  if (cleaned.length === 12 && cleaned.startsWith("91")) {
+    const match = cleaned.match(/^91(\d{5})(\d{5})$/);
+    if (match) {
+      return `+91 ${match[1]}-${match[2]}`;
+    }
+  }
+  return phoneNumberString;
 }
 
 export function MobileNumberCell({ getValue }) {
   const number = getValue();
   return (
     <div className="flex items-center gap-2">
-      <PhoneIcon className="size-4.5 stroke-1 text-gray-400 dark:text-dark-300" />
-      <span className="text-gray-800 dark:text-dark-100">{number}</span>
+      <PhoneIcon className="size-4.5 stroke-1 text-green-500 dark:text-green-400" />
+      <span className="text-gray-800 dark:text-dark-100">{formatPhoneNumber(number)}</span>
     </div>
   );
 }

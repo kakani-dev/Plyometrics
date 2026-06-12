@@ -21,7 +21,7 @@ export function Overview({ candidateCount = 0, refreshKey = 0 }) {
     const fetchStats = async () => {
       try {
         const { data } = await axios.get(
-          `${NEUROPI_API_BASE}/api/TestService/counselor/1/today/1`,
+          `${NEUROPI_API_BASE}/api/TestService/counselor/1/1`,
         );
         if (data && data.data) {
           setStats(data.data);

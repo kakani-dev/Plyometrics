@@ -137,7 +137,7 @@ export default function CandidateListDatatable({ candidates, setCandidates, onDa
               "transition-content flex grow flex-col pt-3",
               tableSettings.enableFullScreen
                 ? "overflow-hidden"
-                : "px-(--margin-x)",
+                : "px-2",
             )}
           >
             <Card
