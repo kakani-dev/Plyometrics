@@ -40,10 +40,10 @@ export function Overview() {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
-      <Card className="flex justify-between p-5">
+      <Card className="flex justify-between p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-100 dark:border-dark-800">
         <div>
-          <p>Attempts</p>
-          <p className="this:info mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-400">Attempts</p>
+          <p className="this:info mt-1.5 text-3xl font-bold text-this dark:text-this-lighter">
             {stats.attempts}
           </p>
         </div>
@@ -59,10 +59,10 @@ export function Overview() {
         </Avatar>
       </Card>
 
-      <Card className="flex justify-between p-5">
+      <Card className="flex justify-between p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-100 dark:border-dark-800">
         <div>
-          <p>Completed</p>
-          <p className="this:warning mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-400">Completed</p>
+          <p className="this:warning mt-1.5 text-3xl font-bold text-this dark:text-this-lighter">
             {stats.completed}
           </p>
         </div>
@@ -78,10 +78,10 @@ export function Overview() {
         </Avatar>
       </Card>
 
-      <Card className="flex justify-between p-5">
+      <Card className="flex justify-between p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-100 dark:border-dark-800">
         <div>
-          <p>Pending</p>  
-          <p className="this:success mt-0.5 text-2xl font-medium text-this dark:text-this-lighter">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-400">Pending</p>  
+          <p className="this:success mt-1.5 text-3xl font-bold text-this dark:text-this-lighter">
             {stats.pending}
           </p>
         </div>

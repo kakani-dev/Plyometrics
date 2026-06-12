@@ -2,7 +2,7 @@
 import PropTypes from "prop-types";
 import {
   EnvelopeIcon,
-  GlobeAltIcon,
+  AcademicCapIcon,
   UserIcon,
   PhoneIcon,
 } from "@heroicons/react/20/solid";
@@ -19,19 +19,19 @@ export function UserCard({
   position,
   phone,
   email,
-  website,
+  exams,
   isOnline,
   query,
 }) {
   return (
-    <Card className="flex grow flex-col items-center p-4 sm:p-5">
+    <Card className="flex grow flex-col items-center p-5 sm:p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-100 dark:border-dark-800">
       <Avatar
-        size={20}
+        size={24}
         name={name}
         src={avatar}
         initialColor="auto"
         classNames={{
-          display: "text-2xl",
+          display: "text-3xl font-semibold",
         }}
         indicator={
           <AvatarDot
@@ -40,40 +40,53 @@ export function UserCard({
           />
         }
       />
-      <h3 className="pt-3 text-lg font-medium text-gray-800 dark:text-dark-100">
+      <h3 className="pt-4 text-xl font-semibold text-gray-800 dark:text-dark-100">
         <Highlight query={query}>{name}</Highlight>
       </h3>
-      <p className="text-xs-plus">
+      <p className="text-xs font-medium text-gray-500 dark:text-dark-400 mt-1">
         <Highlight query={query}>{position}</Highlight>
       </p>
-      <div className="my-4 h-px w-full bg-gray-200 dark:bg-dark-500"></div>
-      <div className="mx-auto inline-grid grid-cols-1 gap-3">
-        <div className="flex min-w-0 items-center space-x-2 ">
-          <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary-600/10 text-primary-600 dark:bg-primary-400/10 dark:text-primary-400">
-            <PhoneIcon className="size-3.5" />
-          </div>
-          <p className="truncate">
-            <Highlight query={query}>{phone}</Highlight>
-          </p>
+      
+      <div className="my-5 h-px w-full bg-gray-150 dark:bg-dark-700"></div>
+      
+      <div className="w-full flex flex-col justify-between flex-1">
+        <div className="mx-auto flex flex-col gap-3.5 text-sm text-gray-600 dark:text-dark-300 w-fit">
+          {phone && (
+            <div className="flex min-w-0 items-center space-x-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500 dark:bg-primary-400/10 dark:text-primary-400">
+                <PhoneIcon className="size-4" />
+              </div>
+              <p className="truncate font-medium">
+                <Highlight query={query}>{phone}</Highlight>
+              </p>
+            </div>
+          )}
+          
+          {email && (
+            <div className="flex min-w-0 items-center space-x-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500 dark:bg-primary-400/10 dark:text-primary-400">
+                <EnvelopeIcon className="size-4" />
+              </div>
+              <p className="truncate font-medium">
+                <Highlight query={query}>{email}</Highlight>
+              </p>
+            </div>
+          )}
+          
+          {exams && (
+            <div className="flex min-w-0 items-center space-x-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500 dark:bg-primary-400/10 dark:text-primary-400">
+                <AcademicCapIcon className="size-4" />
+              </div>
+              <p className="truncate font-medium">
+                <Highlight query={query}>{exams}</Highlight>
+              </p>
+            </div>
+          )}
         </div>
-        <div className="flex min-w-0 items-center space-x-2 ">
-          <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary-600/10 text-primary-600 dark:bg-primary-400/10 dark:text-primary-400">
-            <EnvelopeIcon className="size-3.5" />
-          </div>
-          <p className="truncate">
-            <Highlight query={query}>{email}</Highlight>
-          </p>
-        </div>
-        <div className="flex min-w-0 items-center space-x-2 ">
-          <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary-600/10 text-primary-600 dark:bg-primary-400/10 dark:text-primary-400">
-            <GlobeAltIcon className="size-3.5" />
-          </div>
-          <p className="truncate">
-            <Highlight query={query}>{website}</Highlight>
-          </p>
-        </div>
-        <div className="mt-2 text-center">
-          <Button className="space-x-2 " color="primary">
+        
+        <div className="mt-6 w-full">
+          <Button className="w-full justify-center space-x-2 py-2.5 font-semibold shadow-sm hover:shadow transition-all" color="primary">
             <UserIcon className="size-4" />
             <span>Profile</span>
           </Button>
@@ -89,7 +102,7 @@ UserCard.propTypes = {
   position: PropTypes.string,
   phone: PropTypes.string,
   email: PropTypes.string,
-  website: PropTypes.string,
+  exams: PropTypes.string,
   isOnline: PropTypes.bool,
   query: PropTypes.string,
 };

@@ -37,47 +37,40 @@ export default function UserScreen() {
   return (
     <Page title="User Screen">
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
-        <div className="min-w-0 mb-6">
-          <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
-            User Screen Page
-          </h2>
-        </div>
-        
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-6">
-          <div className="lg:col-span-1">
-            <UserCard
-              name={candidate?.name || "Loading..."}
-              avatar={candidate?.avatar || ""}
-              position="Candidate"
-              phone={candidate?.mobilenumber || ""}
-              email={candidate?.email || ""}
-              website={candidate ? `Exams: ${candidate.examsFinished} / ${candidate.examsTotal}` : ""}
-              isOnline={true}
-              query=""
+        {selectedTest ? (
+          <div className="py-4">
+            <button
+              onClick={() => setSelectedTest(null)}
+              className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-dark-300 dark:hover:text-dark-100 transition-colors"
+            >
+              ← Exit Exam Mode
+            </button>
+            <PsychometricTestCard
+              key={selectedTest.uid}
+              testData={selectedTest}
+              onBack={() => setSelectedTest(null)}
             />
           </div>
-          <div className="lg:col-span-3 space-y-4 sm:space-y-5 lg:space-y-6">
-            <Overview />
-            {!selectedTest ? (
-              <AppointmentsRequestsList onSelectTest={setSelectedTest} />
-            ) : (
-              <div className="mt-6">
-                <button
-                  onClick={() => setSelectedTest(null)}
-                  className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-dark-300 dark:hover:text-dark-100 transition-colors"
-                >
-                  ← Back to Appointments
-                </button>
-                <PsychometricTestCard
-                  key={selectedTest.uid}
-                  testData={selectedTest}
-                  onBack={() => setSelectedTest(null)}
-                />
-              </div>
-            )}
+        ) : (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-6">
+            <div className="lg:col-span-1">
+              <UserCard
+                name={candidate?.name || "Loading..."}
+                avatar={candidate?.avatar || ""}
+                position="Candidate"
+                phone={candidate?.mobilenumber || ""}
+                email={candidate?.email || ""}
+                exams={candidate ? `Exams: ${candidate.examsFinished} / ${candidate.examsTotal}` : ""}
+                isOnline={true}
+                query=""
+              />
+            </div>
+            <div className="lg:col-span-3 space-y-4 sm:space-y-5 lg:space-y-6">
+              <Overview />
+              <AppointmentsRequestsList onSelectTest={setSelectedTest} isCandidateView={true} />
+            </div>
           </div>
-        </div>
-        {/* <OrdersDatatableV1 /> */}
+        )}
       </div>
     </Page>
   );

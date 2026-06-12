@@ -3,7 +3,7 @@ import { AppointmentsRequestsCard } from "./AppointmentsRequestsCard";
 import { getAppointmentsRequestsList } from "app/contexts/api/allapis";
 import { useAuthContext } from "app/contexts/auth/context";
 
-export function AppointmentsRequestsList({ onSelectTest }) {
+export function AppointmentsRequestsList({ onSelectTest, isCandidateView = false }) {
   const [requests, setRequests] = useState([]);
   const { user } = useAuthContext();
 
@@ -46,7 +46,7 @@ export function AppointmentsRequestsList({ onSelectTest }) {
 
 
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
         {requests.map((request) => (
           <AppointmentsRequestsCard
             key={`${request.uid}-${request.testId}`}
@@ -55,6 +55,7 @@ export function AppointmentsRequestsList({ onSelectTest }) {
             email={request.email}
             testName={request.testName}
             isCompleted={request.isCompleted}
+            isCandidateView={isCandidateView}
             onSelect={() => onSelectTest && onSelectTest(request)}
           />
         ))}
