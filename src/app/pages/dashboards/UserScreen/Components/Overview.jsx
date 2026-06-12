@@ -7,15 +7,20 @@ import {
 
 import { Avatar, Card } from "components/ui";
 import { getAppointmentsRequestsList } from "app/contexts/api/allapis";
+import { useAuthContext } from "app/contexts/auth/context";
 
 export function Overview() {
   const [stats, setStats] = useState({ attempts: 0, completed: 0, pending: 0 });
+  const { user } = useAuthContext();
+
+  const candidateId = user?.id || 1;
+  const tenantId = user?.tenantId || 1;
 
   useEffect(() => {
     let mounted = true;
     async function fetchStats() {
       try {
-        const response = await getAppointmentsRequestsList(1, 1);
+        const response = await getAppointmentsRequestsList(candidateId, tenantId);
         const tests = response.data?.[0]?.tests ?? [];
         const completed = tests.filter((t) => t.isCompleted).length;
         if (mounted) {
@@ -31,7 +36,7 @@ export function Overview() {
     }
     fetchStats();
     return () => { mounted = false; };
-  }, []);
+  }, [candidateId, tenantId]);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">

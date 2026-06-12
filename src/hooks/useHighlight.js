@@ -5,6 +5,8 @@ const escapeRegexp = (term) =>
 
 function buildRegex(query) {
     const _query = query
+        .filter((text) => text !== null && text !== undefined)
+        .map((text) => String(text))
         .filter((text) => text.trim().length !== 0)
         .map((text) => escapeRegexp(text.trim()))
     if (!_query.length) {

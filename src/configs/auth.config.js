@@ -5,4 +5,7 @@
 
 export const JWT_HOST_API = "https://jwt-api-node.vercel.app";
 
-export const NEUROPI_API_BASE = "https://localhost:7253";
+// export const NEUROPI_API_BASE = "https://localhost:7253";
+
+export const NEUROPI_API_BASE = "https://context-doorway-ditch.ngrok-free.dev";
+
