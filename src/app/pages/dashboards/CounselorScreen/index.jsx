@@ -4,9 +4,10 @@ import { Page } from "components/shared/Page";
 import { Button } from "components/ui";
 import { useDisclosure } from "hooks";
 import { Overview } from "./Components/Overview";
-import CandidateListDatatable from "./Components/candidate-list-datatable";
+// import CandidateListDatatable from "./Components/candidate-list-datatable";
 import { getCandidatesByTenant } from "./Components/candidate-list-datatable/data";
 import { CreateCandidateDrawer } from "./Components/CreateCandidateDrawer";
+import OrdersDatatableV2 from "./Components/orders-datatable-2";
 
 export default function CounselorScreen() {
   const [candidates, setCandidates] = useState([]);
@@ -49,7 +50,10 @@ export default function CounselorScreen() {
           </Button>
         </div>
         <Overview candidateCount={candidates.length} refreshKey={refreshKey} />
-        <CandidateListDatatable candidates={candidates} setCandidates={setCandidates} onDataChange={refreshData} />
+        {/* <CandidateListDatatable candidates={candidates} setCandidates={setCandidates} onDataChange={refreshData} /> */}
+
+
+        <OrdersDatatableV2 />
       </div>
 
       <CreateCandidateDrawer
@@ -57,6 +61,8 @@ export default function CounselorScreen() {
         close={closeCreate}
         onSuccess={refreshData}
       />
+
+
     </Page>
   );
 }
