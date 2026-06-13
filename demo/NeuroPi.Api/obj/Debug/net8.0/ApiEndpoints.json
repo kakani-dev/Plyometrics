@@ -1,0 +1,102 @@
+[
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "GenerateAiReport",
+    "RelativePath": "api/Assessment/ai-report",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NeuroPi.Api.Controllers.AiReportRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "GetHistory",
+    "RelativePath": "api/Assessment/history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "PopulateMockDemo",
+    "RelativePath": "api/Assessment/mock-demo/{sessionId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "sessionId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "GetQuestions",
+    "RelativePath": "api/Assessment/questions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "GetResults",
+    "RelativePath": "api/Assessment/results/{sessionId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "sessionId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "StartSession",
+    "RelativePath": "api/Assessment/start",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NeuroPi.Api.Controllers.StartSessionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NeuroPi.Api.Controllers.AssessmentController",
+    "Method": "SubmitAnswer",
+    "RelativePath": "api/Assessment/submit",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NeuroPi.Api.Controllers.SubmitAnswerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
