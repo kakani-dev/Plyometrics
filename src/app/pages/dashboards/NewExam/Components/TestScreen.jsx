@@ -9,7 +9,7 @@ const LIKERT_LABELS = [
 export default function TestScreen({
   currentQuestion, currentQuestionIndex, questionsLength, timeElapsed,
   formatTime, progressPercent, selectedAnswers, handleAnswerSelect,
-  questionTimeSpent, handleNextQuestion, consoleLogs, consoleEndRef,
+  questionTimeSpent, handleNextQuestion,
   servedQuestionsHistory = [],
 }) {
   const subdomainCounts = {};
@@ -37,11 +37,6 @@ export default function TestScreen({
   const getLikertLabel = (val) => {
     const item = LIKERT_LABELS.find((l) => l.value === val);
     return item ? <span className={item.colorClass}>{item.label}</span> : "";
-  };
-
-  const getLogType = (log) => {
-    if (!log || typeof log !== "string") return "system";
-    return log.includes("[SYS]") ? "system" : log.includes("[SUB]") ? "success" : "system";
   };
 
   return (
@@ -114,66 +109,6 @@ export default function TestScreen({
               {currentQuestionIndex + 1 === questionsLength ? "Finish Assessment" : "Submit & Continue"}
             </button>
           </div>
-        </div>
-        <div className="test-panel-side glass-panel">
-          <div className="console-header">
-            <h3>Adaptive Engine Brain</h3>
-            <span className="badge badge-pulse">Active</span>
-          </div>
-          <div className="console-body" ref={consoleEndRef}>
-            {consoleLogs.map((log, idx) => (
-              <div key={idx} className={`console-log-line ${getLogType(log)}`}>{log}</div>
-            ))}
-          </div>
-          <div className="engine-state-stats">
-            <div className="stat-row">
-              <span>Active Metrics Evaluated:</span>
-              <span className="stat-value">{Object.keys(selectedAnswers).length} / 28</span>
-            </div>
-            <div className="stat-row">
-              <span>Questions Saved:</span>
-              <span className="stat-val text-high">
-                {Math.floor(currentQuestionIndex / 2) * 3}
-              </span>
-            </div>
-            <div className="stat-row">
-              <span>Validity Status:</span>
-              <span className="stat-val text-high">Stable</span>
-            </div>
-          </div>
-          <details className="debug-panel-details" open>
-            <summary className="debug-panel-summary">🔍 Adaptive Engine Debugger</summary>
-            <div className="debug-panel-content">
-              <div className="debug-section">
-                <h4>Subdomain Distribution</h4>
-                <div className="debug-grid">
-                  {Object.entries(subdomainCounts).map(([sub, count]) => (
-                    <div key={sub} className="debug-row">
-                      <span className="debug-label">{sub}</span>
-                      <span className="debug-value">{count} q</span>
-                    </div>
-                  ))}
-                  {Object.keys(subdomainCounts).length === 0 && (
-                    <span className="debug-empty">No questions served yet.</span>
-                  )}
-                </div>
-              </div>
-              <div className="debug-section">
-                <h4>Difficulty Levels served</h4>
-                <div className="debug-grid">
-                  {Object.entries(difficultyCounts).map(([level, count]) => (
-                    <div key={level} className="debug-row">
-                      <span className="debug-label">{level}</span>
-                      <span className="debug-value text-emerald">{count} q</span>
-                    </div>
-                  ))}
-                  {Object.keys(difficultyCounts).length === 0 && (
-                    <span className="debug-empty">No questions served yet.</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </details>
         </div>
       </div>
     </div>

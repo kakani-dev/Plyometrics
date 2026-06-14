@@ -4,12 +4,10 @@ import { Overview } from "./Components/Overview";
 import { UserCard } from "./Components/UserCard";
 // import OrdersDatatableV1 from "./Components/orders-datatable-1";
 import { AppointmentsRequestsList } from "../AssessmentUI/Components/AppointmentsRequestsList";
-import { PsychometricTestCard } from "../AssessmentUI/Components/PsychometricTestCard/PsychometricTestCard";
 import { getCandidateDetails } from "app/contexts/api/allapis";
 import { useAuthContext } from "app/contexts/auth/context";
 
-export default function UserScreen() {
-  const [selectedTest, setSelectedTest] = useState(null);
+export default function UserScreen({ setProfile, handleStartTest }) {
   const [candidate, setCandidate] = useState(null);
   const { user } = useAuthContext();
 
@@ -22,7 +20,8 @@ export default function UserScreen() {
       try {
         const response = await getCandidateDetails(candidateId, tenantId);
         if (mounted && response && response.data) {
-          setCandidate(response.data);
+          const raw = response.data;
+          setCandidate(Array.isArray(raw) ? raw[0] : raw);
         }
       } catch (err) {
         console.error("Failed to load candidate details:", err);
@@ -34,43 +33,42 @@ export default function UserScreen() {
     };
   }, [candidateId, tenantId]);
 
+  const handleTestSelect = (request) => {
+    const profileData = {
+      name: request.name || "",
+      grade: "8",
+      apiKey: "",
+      difficultyTypes: "Easy,Medium",
+      difficultyRatios: request.difficultyRatios || "",
+      questionsPerSubdomain: String(request.questionsPerSubdomain || ""),
+      testTypeServiceId: request.testTypeId,
+      tenantId: 1,
+    };
+    setProfile(profileData);
+    handleStartTest(null, profileData);
+  };
+
   return (
     <Page title="User Screen">
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
-        {selectedTest ? (
-          <div className="py-4">
-            <button
-              onClick={() => setSelectedTest(null)}
-              className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-dark-300 dark:hover:text-dark-100 transition-colors"
-            >
-              ← Exit Exam Mode
-            </button>
-            <PsychometricTestCard
-              key={selectedTest.uid}
-              testData={selectedTest}
-              onBack={() => setSelectedTest(null)}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-6">
+          <div className="lg:col-span-1">
+            <UserCard
+              name={candidate?.name || "Loading..."}
+              avatar={candidate?.avatar || ""}
+              position="Candidate"
+              phone={candidate?.mobilenumber || ""}
+              email={candidate?.email || ""}
+              exams={candidate ? `Exams: ${candidate.examsFinished} / ${candidate.examsTotal}` : ""}
+              isOnline={true}
+              query=""
             />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-6">
-            <div className="lg:col-span-1">
-              <UserCard
-                name={candidate?.name || "Loading..."}
-                avatar={candidate?.avatar || ""}
-                position="Candidate"
-                phone={candidate?.mobilenumber || ""}
-                email={candidate?.email || ""}
-                exams={candidate ? `Exams: ${candidate.examsFinished} / ${candidate.examsTotal}` : ""}
-                isOnline={true}
-                query=""
-              />
-            </div>
-            <div className="lg:col-span-3 space-y-4 sm:space-y-5 lg:space-y-6">
-              <Overview />
-              <AppointmentsRequestsList onSelectTest={setSelectedTest} isCandidateView={true} />
-            </div>
+          <div className="lg:col-span-3 space-y-4 sm:space-y-5 lg:space-y-6">
+            <Overview />
+            <AppointmentsRequestsList onSelectTest={handleTestSelect} isCandidateView={true} />
           </div>
-        )}
+        </div>
       </div>
     </Page>
   );

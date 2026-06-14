@@ -6,14 +6,16 @@ export async function startBackendSession(profile) {
       studentName: profile.name,
       grade: profile.grade,
       apiKey: profile.apiKey,
+      tenantId: profile.tenantId != null ? Number(profile.tenantId) : 1,
+      testTypeServiceId: profile.testTypeServiceId != null ? Number(profile.testTypeServiceId) : 0,
     };
-    if (profile.difficultyTypes) {
+    if (profile.difficultyTypes != null) {
       body.difficultyTypes = profile.difficultyTypes;
     }
-    if (profile.difficultyRatios) {
+    if (profile.difficultyRatios != null) {
       body.difficultyRatios = profile.difficultyRatios;
     }
-    if (profile.questionsPerSubdomain) {
+    if (profile.questionsPerSubdomain != null && profile.questionsPerSubdomain !== "") {
       body.questionsPerSubdomain = Number(profile.questionsPerSubdomain);
     }
     

@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using NeuroPi.Api.Data;
 using NeuroPi.Api.Models;
@@ -17,7 +19,7 @@ namespace NeuroPi.Api.Services
         Task InitializeAsync();
         List<Question> GetQuestions();
         AssessmentRules GetRules();
-        Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey, string difficultyTypes = "Easy,Medium,Hard", string difficultyRatios = "33,34,33", int questionsPerSubdomain = 3);
+        Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey, string difficultyTypes = "Easy,Medium,Hard", string difficultyRatios = "33,34,33", int questionsPerSubdomain = 3, int testTypeServiceId = 1, int tenantId = 1);
         Task<Question?> GetNextQuestionAsync(Guid sessionId);
         Task<Question?> SubmitAnswerAsync(Guid sessionId, string qid, string responseValue, int timeSec);
         Task<AssessmentResultsDto> CompileResultsAsync(Guid sessionId);
@@ -31,6 +33,8 @@ namespace NeuroPi.Api.Services
     {
         private readonly AssessmentDbContext _context;
         private readonly IHostEnvironment _env;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly string _sessionPatchUrl;
 
         private static AssessmentRules _rules = new();
         private static readonly object _lock = new();
@@ -72,10 +76,12 @@ namespace NeuroPi.Api.Services
             ("Additional NeuroPi Indicators", "CareerClarity", "CareerClarity")
         };
 
-        public AssessmentService(AssessmentDbContext context, IHostEnvironment env)
+        public AssessmentService(AssessmentDbContext context, IHostEnvironment env, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _context = context;
             _env = env;
+            _httpClientFactory = httpClientFactory;
+            _sessionPatchUrl = configuration["ExternalApi:SessionPatchUrl"] ?? "";
         }
 
         public async Task InitializeAsync()
@@ -155,7 +161,7 @@ namespace NeuroPi.Api.Services
             return await _context.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId);
         }
 
-        public async Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey, string difficultyTypes = "Easy,Medium,Hard", string difficultyRatios = "33,34,33", int questionsPerSubdomain = 3)
+        public async Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey, string difficultyTypes = "Easy,Medium,Hard", string difficultyRatios = "33,34,33", int questionsPerSubdomain = 3, int testTypeServiceId = 1, int tenantId = 1)
         {
             await InitializeAsync();
 
@@ -169,12 +175,36 @@ namespace NeuroPi.Api.Services
                 DifficultyTypes = difficultyTypes,
                 DifficultyRatios = difficultyRatios,
                 QuestionsPerSubdomain = questionsPerSubdomain,
-                CognitiveDifficultyState = "Logic:0,Numerical:0,Verbal:0,Abstract:0,Spatial:0"
+                CognitiveDifficultyState = "Logic:0,Numerical:0,Verbal:0,Abstract:0,Spatial:0",
+                TestTypeServiceId = testTypeServiceId,
+                TenantId = tenantId
             };
 
             _context.Sessions.Add(session);
             await _context.SaveChangesAsync();
+
+            // Notify external API about the new session (reads values from the session record)
+            _ = NotifyExternalApiAsync(session);
+
             return session;
+        }
+
+        private async Task NotifyExternalApiAsync(AssessmentSession session)
+        {
+            try
+            {
+                using var client = _httpClientFactory.CreateClient();
+                var baseUrl = _sessionPatchUrl
+                    .Replace("{testTypeServiceId}", session.TestTypeServiceId.ToString())
+                    .Replace("{tenantId}", session.TenantId.ToString());
+                var url = $"{baseUrl}?sessionId={session.Id}";
+                using var response = await client.PatchAsync(url, null);
+                Console.WriteLine($"External API PATCH result: {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"External API PATCH failed: {ex.Message}");
+            }
         }
 
         public async Task<Question?> GetNextQuestionAsync(Guid sessionId)

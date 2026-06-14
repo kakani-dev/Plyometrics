@@ -177,7 +177,7 @@ export default function ResultsScreen({
         )}
 
         {activeTab === "metrics" && (
-          <div>
+          <div className="tab-content active">
             <div className="metrics-summary-controls">
               <div className="filter-group">
                 {FILTER_BTNS.map((btn) => (
@@ -194,17 +194,31 @@ export default function ResultsScreen({
             </div>
             <div className="metrics-grid">
               {filteredMetrics.map((m) => {
-                const bCls = m.band === "High" ? "band-high" : m.band === "Moderate" ? "band-moderate" : "band-low";
+                const band = m.band || m.Band;
+                const name = m.name || m.Name || m.subdomain || m.Subdomain;
+                const score = m.score ?? m.Score ?? m.score_0_100 ?? m.Score_0_100;
+                const layer = m.layer || m.Layer || m.domain || m.Domain;
+                const bCls = band === "High" ? "band-high" : band === "Moderate" ? "band-moderate" : band === "Low" ? "band-low" : "";
                 return (
-                  <div key={m.id || m.subdomain} className="metric-card"
+                  <div key={m.id || m.Id || m.subdomain || m.Subdomain} className="metric-card glass-panel cursor-pointer hover:border-cyan-500 transition-colors"
+                    style={{
+                      padding: "1.25rem",
+                      border: "1px solid var(--border-glass)",
+                      borderRadius: "12px",
+                      background: "rgba(14, 22, 38, 0.4)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: "0.5rem"
+                    }}
                     onClick={() => setSelectedMetric(m)}>
                     <div className="metric-card-header">
-                      <span className="metric-layer-tag">{m.layer || m.domain}</span>
-                      <span className={`badge ${bCls}`}>{m.band}</span>
+                      <span className="metric-layer-tag">{layer}</span>
+                      <span className={`badge ${bCls}`}>{band}</span>
                     </div>
-                    <h4>{m.name || m.subdomain}</h4>
+                    <h4 style={{ fontSize: "1rem", fontWeight: "600", color: "var(--color-text-main)", margin: "0.25rem 0" }}>{name}</h4>
                     <div className="metric-score-display">
-                      <span className="metric-score-num">{m.score ?? m.score_0_100}</span>
+                      <span className="metric-score-num">{score}</span>
                       <span className="metric-score-pct">%</span>
                     </div>
                   </div>

@@ -32,6 +32,9 @@ namespace NeuroPi.Api.Models
         public string DifficultyRatios { get; set; } = "33,34,33";
         public int QuestionsPerSubdomain { get; set; } = 3;
 
+        public int TestTypeServiceId { get; set; } = 1;
+        public int TenantId { get; set; } = 1;
+
         // Navigation navigation
         public List<StudentResponse> Responses { get; set; } = new();
     }

@@ -9,45 +9,25 @@ import { XMarkIcon } from "@heroicons/react/24/solid";
 import { NotebookText } from "lucide-react";
 import axios from "axios";
 import dayjs from "dayjs";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { toast } from "sonner";
 
 // Local Imports
 import { Button, Input } from "components/ui";
 import { DatePicker } from "components/shared/form/Datepicker";
-import { Listbox } from "components/shared/form/Listbox";
 import { NEUROPI_API_BASE } from "configs/auth.config";
-
-// ----------------------------------------------------------------------
-
-const difficultyOptions = [
-  { id: 1, name: "Easy" },
-  { id: 2, name: "Medium" },
-  { id: 3, name: "Hard" },
-  { id: 4, name: "Expert" },
-];
 
 // ----------------------------------------------------------------------
 
 export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
   const [existingExams, setExistingExams] = useState([]);
   const [loadingExams, setLoadingExams] = useState(false);
-  const [difficulties, setDifficulties] = useState([]);
-  const [loadingDifficulties, setLoadingDifficulties] = useState(false);
-  const [selectedDifficulties, setSelectedDifficulties] = useState([]);
   const [examDate, setExamDate] = useState(null);
   const [sampleSize, setSampleSize] = useState("");
-  const [minAge, setMinAge] = useState("");
-  const [maxAge, setMaxAge] = useState("");
-  const [ratios, setRatios] = useState([]);
+  const [ratios, setRatios] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [payloadPreview, setPayloadPreview] = useState(null);
-
-  const ageFromDob = useMemo(() => {
-    if (!row.original.dob) return null;
-    return dayjs().diff(dayjs(row.original.dob), "year");
-  }, [row.original.dob]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,51 +46,15 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
       }
     };
     fetchExistingExams();
-
-    const fetchDifficulties = async () => {
-      setLoadingDifficulties(true);
-      try {
-        const { data } = await axios.get(
-          `${NEUROPI_API_BASE}/api/MasterService/1`,
-        );
-        setDifficulties(data.data || []);
-      } catch {
-        setDifficulties(difficultyOptions);
-      } finally {
-        setLoadingDifficulties(false);
-      }
-    };
-    fetchDifficulties();
   }, [isOpen, row.original.id]);
-
-  const handleDifficultyChange = useCallback((items) => {
-    setSelectedDifficulties(items);
-    setRatios(new Array(items.length).fill(""));
-  }, []);
-
-  const handleRatioChange = (index, value) => {
-    const updated = [...ratios];
-    updated[index] = value;
-    setRatios(updated);
-  };
 
   const handleSubmit = useCallback(() => {
     if (!examDate) {
       toast.error("Please select an exam date");
       return;
     }
-    if (!selectedDifficulties.length) {
-      toast.error("Please select at least one difficulty");
-      return;
-    }
     if (!sampleSize) {
       toast.error("Please enter sample size");
-      return;
-    }
-
-    const ratioSum = ratios.reduce((sum, r) => sum + (Number(r) || 0), 0);
-    if (ratioSum > 100) {
-      toast.error("Sum of ratios cannot exceed 100");
       return;
     }
 
@@ -121,19 +65,13 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
       tenantId: 1,
       createdBy: "1",
       sampleSize: Number(sampleSize),
-      minAge: Number(minAge) || ageFromDob || 0,
-      maxAge: Number(maxAge) || ageFromDob || 0,
-      difficultyIds: selectedDifficulties.map((d) => d.id).join(","),
-      ratios: ratios.filter((r) => r !== "").join(","),
+      ratios: ratios,
     };
 
     setPayloadPreview(payload);
   }, [
     examDate,
-    selectedDifficulties,
     sampleSize,
-    minAge,
-    maxAge,
     ratios,
     row.original.id,
   ]);
@@ -259,20 +197,6 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
                 <p className="text-sm text-gray-400">No existing tests found</p>
               )}
 
-              <Listbox
-                multiple
-                data={difficulties}
-                value={selectedDifficulties}
-                onChange={handleDifficultyChange}
-                label="Difficulty Levels"
-                displayField="name"
-                placeholder={
-                  loadingDifficulties
-                    ? "Loading..."
-                    : "Select difficulties..."
-                }
-              />
-
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-dark-200">
                   Exam Date
@@ -288,55 +212,22 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <Input
-                  label="Sample Size"
-                  type="number"
-                  placeholder="e.g. 50"
-                  value={sampleSize}
-                  onChange={(e) => setSampleSize(e.target.value)}
-                />
-                <Input
-                  label="Min Age"
-                  type="number"
-                  placeholder="e.g. 18"
-                  value={minAge || (ageFromDob != null ? String(ageFromDob) : "")}
-                  onChange={(e) => setMinAge(e.target.value)}
-                />
-                <Input
-                  label="Max Age"
-                  type="number"
-                  placeholder="e.g. 60"
-                  value={maxAge || (ageFromDob != null ? String(ageFromDob) : "")}
-                  onChange={(e) => setMaxAge(e.target.value)}
-                />
-              </div>
+              <Input
+                label="Sample Size"
+                type="number"
+                placeholder="e.g. 50"
+                value={sampleSize}
+                onChange={(e) => setSampleSize(e.target.value)}
+              />
 
-              {selectedDifficulties.length > 0 && (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200">
-                    Ratios (sum should not exceed 100)
-                  </label>
-                  {selectedDifficulties.map((diff, index) => (
-                    <div key={diff.id} className="flex items-center gap-3">
-                      <span className="w-20 text-sm font-medium text-gray-600 dark:text-dark-300">
-                        {diff.name}
-                      </span>
-                      <Input
-                        type="number"
-                        placeholder="e.g. 30"
-                        value={ratios[index] || ""}
-                        onChange={(e) => handleRatioChange(index, e.target.value)}
-                        className="flex-1"
-                      />
-                      <span className="text-sm text-gray-400">%</span>
-                    </div>
-                  ))}
-                  <p className="text-xs text-gray-400">
-                    Total: {ratios.reduce((s, r) => s + (Number(r) || 0), 0)}%
-                  </p>
-                </div>
-              )}
+              <Input
+                label="Ratios"
+                type="text"
+                placeholder="e.g. 100"
+                value={ratios}
+                onChange={(e) => setRatios(e.target.value)}
+              />
+
             </div>
           </div>
 

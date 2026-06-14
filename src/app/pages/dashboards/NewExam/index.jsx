@@ -3,13 +3,20 @@ import { Page } from "components/shared/Page";
 import { toast } from "sonner";
 import { DUMMY_QUESTIONS, DUMMY_METRICS } from "./data";
 import {
+  INITIAL_CONSOLE_LOGS,
+  SUBDOMAINS_LIST,
+  DIFFICULTY_LEVELS,
+} from "./const";
+
+import UserScreen from './../UserScreen'
+
+import {
   startBackendSession,
   submitAnswerToBackend,
   fetchResults,
   generateAiReportBackend,
   generateAiReportDirect,
 } from "./apicalling";
-import WelcomeScreen from "./Components/WelcomeScreen";
 import TestScreen from "./Components/TestScreen";
 import ResultsScreen from "./Components/ResultsScreen";
 import MetricDetailModal from "./Components/MetricDetailModal";
@@ -20,7 +27,7 @@ export default function NewExam() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [profile, setProfile] = useState({
     name: "",
-    grade: "",
+    grade: "8",
     apiKey: "",
     difficultyTypes: "",
     difficultyRatios: "",
@@ -31,10 +38,7 @@ export default function NewExam() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [consoleLogs, setConsoleLogs] = useState([
-    "[SYS] NeuroPi Adaptive Assessment engine initialized.",
-    "[SYS] Grade model loaded. Waiting for registration..."
-  ]);
+  const [consoleLogs, setConsoleLogs] = useState(INITIAL_CONSOLE_LOGS);
   const [timerActive, setTimerActive] = useState(false);
   const [questionTimeSpent, setQuestionTimeSpent] = useState(0);
   const [selectedMetric, setSelectedMetric] = useState(null);
@@ -52,22 +56,22 @@ export default function NewExam() {
     const rawType = bq["Question Type"] || bq.questionType || bq.type;
     const text = bq.Question || bq.questionText || bq.text;
     const type = (rawType && rawType.toLowerCase() === "mcq") ? "mcq" : "likert";
-    
+
     const difficulty = bq.Difficulty || bq.difficulty || "Unknown";
-    
+
     let options = [];
     if (type === "mcq") {
       const optA = bq["Option A"] || bq.optionA;
       const optB = bq["Option B"] || bq.optionB;
       const optC = bq["Option C"] || bq.optionC;
       const optD = bq["Option D"] || bq.optionD;
-      
+
       if (optA) options.push({ letter: "A", text: optA });
       if (optB) options.push({ letter: "B", text: optB });
       if (optC) options.push({ letter: "C", text: optC });
       if (optD) options.push({ letter: "D", text: optD });
     }
-    
+
     return { id, domain, subdomain, text, type, options, difficulty };
   };
 
@@ -124,21 +128,22 @@ export default function NewExam() {
     };
   }, []);
 
-  const handleStartTest = async (e) => {
+  const handleStartTest = async (e, overrideProfile) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
-    console.log("handleStartTest triggered. Profile name:", profile.name, "Grade:", profile.grade);
+    const p = overrideProfile || profile;
+    console.log("handleStartTest triggered. Profile name:", p.name, "Grade:", p.grade);
 
-    if (!profile.name || !profile.grade) {
+    if (!p.name || !p.grade) {
       console.warn("handleStartTest: Profile name or grade is missing. Aborting.");
       alert("Please fill in Student Full Name and select a Grade class before starting.");
       return;
     }
 
     try {
-      addLog(`[REG] Student Profile: ${profile.name} (Grade ${profile.grade})`);
+      addLog(`[REG] Student Profile: ${p.name} (Grade ${p.grade})`);
 
       console.log("Attempting to connect to backend...");
-      const backend = await startBackendSession(profile);
+      const backend = await startBackendSession(p);
       if (backend) {
         setSessionId(backend.sessionId);
         addLog(`[API] Session created: ${backend.sessionId}`);
@@ -146,7 +151,7 @@ export default function NewExam() {
           addLog(`[ENG] Difficulty State: ${backend.cognitiveDifficultyState}`);
         }
         console.log("Session created successfully:", backend.sessionId, backend);
-        
+
         const firstQ = mapBackendQuestionToFrontend(backend.firstQuestion);
         setCurrentQuestion(firstQ);
         if (firstQ) {
@@ -156,7 +161,7 @@ export default function NewExam() {
       } else {
         addLog("[API] Backend offline, using local mock mode");
         console.log("Backend connection failed. Falling back to local mock mode.");
-        
+
         const firstMockQ = DUMMY_QUESTIONS[0];
         setCurrentQuestion(firstMockQ);
         setServedQuestionsHistory([firstMockQ]);
@@ -180,73 +185,6 @@ export default function NewExam() {
   };
 
   const [generatingAiReport, setGeneratingAiReport] = useState(false);
-
-  const handleDemoReport = () => {
-    const name = profile.name || "Harsh Demo";
-    const grade = profile.grade || "10";
-    setProfile({
-      name,
-      grade,
-      apiKey: profile.apiKey,
-      difficultyTypes: "",
-      difficultyRatios: "",
-      questionsPerSubdomain: "",
-    });
-
-    const mockGauges = {
-      careerReadiness: 88,
-      riasecClarity: 75,
-      cognitiveIndex: 95,
-      emotionalSustainability: 68
-    };
-    const mockVectors = {
-      dominantRIASEC: "Realistic",
-      dominantBig5: "Conscientiousness",
-      dominantLearning: "Visual",
-      bigFiveBalance: 82,
-      learningPreferenceStrength: 90
-    };
-    const mockAlert = {
-      alertType: "Strong technical alignment",
-      description: "Validity check passed. Student registers exceptional logical reasoning capacity.",
-      alertClass: "alert-success"
-    };
-    const mockRoadmap = {
-      counselorFocus: "Strengths confirmation and growth plan",
-      permutationAction: "Recommend pursuing Science (PCM) with Computer Science. Focus counseling on emotional coping strategies.",
-      priorities: ["Academic Skills", "Stress Management", "Career Exploration"]
-    };
-    const mockStream = {
-      stream: "Science (PCM)",
-      subjects: "Physics, Chemistry, Mathematics",
-      actions: [
-        "Strengthen mathematical foundations and practice structured numerical derivations daily.",
-        "Participate in practical projects like coding, electronics, or robotics to apply physics.",
-        "Solve complex multi-step logical problems to prepare for engineering/technology streams."
-      ],
-      careerFitScore: 86
-    };
-    const mockNarrative = {
-      executiveSummary: "The candidate completed the student profiling battery. Analysis shows high analytical reasoning index with well-developed visual processing.",
-      cognitiveStrengths: "Demonstrates perfect logical deductive capabilities and robust visual cognitive efficiency.",
-      learningStrategy: "High visual preference suggests utilizing diagrams, video explanations, and concept mapping.",
-      careerMapping: "Academic performance index matches streams with rigorous technical foundations.",
-      counselorGuideline: "Ensure balanced study routine. Promote stress management techniques."
-    };
-    
-    setResultsData({
-      profileCode: "NP-P1028",
-      circularGauges: mockGauges,
-      dominantVectors: mockVectors,
-      primaryAlert: mockAlert,
-      counselorRoadmap: mockRoadmap,
-      streamRecommendation: mockStream,
-      localNarrative: mockNarrative,
-      metrics: DUMMY_METRICS
-    });
-
-    setCurrentScreen("results");
-  };
 
   const handleGenerateAiReport = async () => {
     if (!profile.apiKey) return;
@@ -355,42 +293,21 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
 
     if (currentQuestionIndex + 1 === totalQuestionsCount) {
       toast.success("Assessment complete! Preparing your results report...");
-      
-      const subdomainsList = [
-        "Realistic", "Investigative", "Openness", "Conscientiousness", "Abstract Reasoning",
-        "Logical Deduction", "Stress Tolerance", "Resilience", "Visual Preference", "Kinesthetic Preference",
-        "Artistic", "Social", "Enterprising", "Conventional", "Validity", "Extraversion",
-        "Agreeableness", "Neuroticism", "Numerical", "Logic", "Verbal", "Abstract", "Spatial",
-        "Stress", "Confidence", "Coping", "Visual", "Auditory", "Kinesthetic", "ReadingWriting",
-        "Motivation", "StudyHabits", "CareerClarity"
-      ];
-      
+
       const finalSubdomains = {};
-      subdomainsList.forEach(sub => {
-        finalSubdomains[sub] = {
-          "Easy": 0,
-          "Medium": 0,
-          "Hard": 0
-        };
+      SUBDOMAINS_LIST.forEach(sub => {
+        finalSubdomains[sub] = { ...DIFFICULTY_LEVELS };
       });
 
-      const finalDifficulties = {
-        "Easy": 0,
-        "Medium": 0,
-        "Hard": 0
-      };
+      const finalDifficulties = { ...DIFFICULTY_LEVELS };
 
       servedQuestionsHistory.forEach((q) => {
         const sub = q.subdomain;
         const diff = q.difficulty;
-        
+
         if (sub) {
           if (!finalSubdomains[sub]) {
-            finalSubdomains[sub] = {
-              "Easy": 0,
-              "Medium": 0,
-              "Hard": 0
-            };
+            finalSubdomains[sub] = { ...DIFFICULTY_LEVELS };
           }
           if (diff && diff in finalSubdomains[sub]) {
             finalSubdomains[sub][diff]++;
@@ -398,7 +315,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
             finalSubdomains[sub][diff] = (finalSubdomains[sub][diff] || 0) + 1;
           }
         }
-        
+
         if (diff && diff in finalDifficulties) {
           finalDifficulties[diff]++;
         } else if (diff) {
@@ -426,20 +343,20 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
 
     if (sessionId) {
       const result = await submitAnswerToBackend(sessionId, currentQuestion.id, answer, questionTimeSpent);
-      
+
       if (result && result.isCompleted) {
         setTimerActive(false);
         addLog("[SYS] All questions completed.");
-        
+
         const data = await fetchResults(sessionId);
         if (data) setResultsData(data);
-        
+
         addLog("[SYS] Running diagnostic engine matrix...");
         addLog("[SYS] Report generated.");
         setCurrentScreen("results");
         return;
       }
-      
+
       if (result && result.nextQuestion) {
         const nextQ = mapBackendQuestionToFrontend(result.nextQuestion);
         setCurrentQuestion(nextQ);
@@ -482,10 +399,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
     setServedQuestionsHistory([]);
     setSessionId(null);
     setResultsData(null);
-    setConsoleLogs([
-      "[SYS] NeuroPi Adaptive Assessment engine initialized.",
-      "[SYS] Grade model loaded. Waiting for registration..."
-    ]);
+    setConsoleLogs(INITIAL_CONSOLE_LOGS);
     setCurrentQuestion(null);
     setCurrentQuestionIndex(0);
     setTotalQuestionsCount(DUMMY_QUESTIONS.length);
@@ -498,9 +412,10 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
 
   const getStrokeDashOffset = (percentage) => 251 - (251 * percentage) / 100;
 
-  const filteredMetrics = (resultsData?.metrics || DUMMY_METRICS).filter((m) => {
+  const filteredMetrics = (resultsData?.metrics || resultsData?.Metrics || DUMMY_METRICS).filter((m) => {
     if (metricFilter === "all") return true;
-    return m.layer === metricFilter || m.domain === metricFilter;
+    const layerVal = m.layer || m.Layer || m.domain || m.Domain;
+    return layerVal === metricFilter;
   });
 
   const handleExportJSON = () => {
@@ -515,6 +430,15 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
     a.remove();
   };
 
+  if (currentScreen === "welcome") {
+    return (
+      <UserScreen
+        setProfile={setProfile}
+        handleStartTest={handleStartTest}
+      />
+    );
+  }
+
   return (
     <Page title="New Exam">
       <div className="new-exam-wrapper neuropi-portal transition-content w-full min-h-screen pb-12">
@@ -522,8 +446,8 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
           <div className="header-container">
             <div className="logo-area">
               <svg className="brain-logo" viewBox="0 0 24 24" width="32" height="32">
-                <path fill="currentColor" d="M12,3c-4.97,0-9,4.03-9,9c0,2.12,0.74,4.07,1.97,5.61L4.35,19.4c-0.39,0.39-0.39,1.02,0,1.41c0.39,0.39,1.02,0.39,1.41,0l1.9-1.9C9.07,19.58,10.48,20,12,20c4.97,0,9-4.03,9-9S16.97,3,12,3z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S15.31,18,12,18z"/>
-                <path fill="currentColor" opacity="0.8" d="M12,8c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4S14.21,8,12,8z M12,14c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,14,12,14z"/>
+                <path fill="currentColor" d="M12,3c-4.97,0-9,4.03-9,9c0,2.12,0.74,4.07,1.97,5.61L4.35,19.4c-0.39,0.39-0.39,1.02,0,1.41c0.39,0.39,1.02,0.39,1.41,0l1.9-1.9C9.07,19.58,10.48,20,12,20c4.97,0,9-4.03,9-9S16.97,3,12,3z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S15.31,18,12,18z" />
+                <path fill="currentColor" opacity="0.8" d="M12,8c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4S14.21,8,12,8z M12,14c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,14,12,14z" />
               </svg>
               <div className="brand-text">
                 <h1>NeuroPi</h1>
@@ -542,15 +466,6 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
         </header>
 
         <main className="app-main">
-          {currentScreen === "welcome" && (
-            <WelcomeScreen
-              profile={profile}
-              setProfile={setProfile}
-              handleStartTest={handleStartTest}
-              handleDemoReport={handleDemoReport}
-            />
-          )}
-
           {currentScreen === "test" && currentQuestion && (
             <TestScreen
               currentQuestion={currentQuestion}

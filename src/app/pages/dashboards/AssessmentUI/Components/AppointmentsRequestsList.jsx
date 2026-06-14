@@ -20,15 +20,19 @@ export function AppointmentsRequestsList({ onSelectTest, isCandidateView = false
           const candidates = Array.isArray(data) ? data : [data];
           const flattened = candidates.flatMap((candidate) =>
             (candidate.tests || []).map((test) => ({
+              tenantId: candidate.tenantId,
               uid: candidate.uid,
               name: candidate.name,
               email: candidate.email,
               avatar: candidate.avatar,
               testId: test.testId,
+              testTypeId: test.testTypeId,
               testName: test.testName,
               examDate: test.examDate,
               totalTestTime: test.totalTestTime,
               isCompleted: test.isCompleted,
+              difficultyRatios: test.difficultyRatios,
+              questionsPerSubdomain: test.questionsPerSubdomain,
             }))
           );
           setRequests(flattened);

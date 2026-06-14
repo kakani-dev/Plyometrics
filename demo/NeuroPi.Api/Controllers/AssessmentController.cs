@@ -32,7 +32,8 @@ namespace NeuroPi.Api.Controllers
             {
                 var session = await _assessmentService.StartSessionAsync(
                     request.StudentName, request.Grade, "adaptive", request.ApiKey,
-                    request.DifficultyTypes, request.DifficultyRatios, request.QuestionsPerSubdomain);
+                    request.DifficultyTypes, request.DifficultyRatios, request.QuestionsPerSubdomain,
+                    request.TestTypeServiceId, request.TenantId);
 
                 var firstQuestion = await _assessmentService.GetNextQuestionAsync(session.Id);
 
@@ -189,6 +190,8 @@ namespace NeuroPi.Api.Controllers
         public string DifficultyTypes { get; set; } = "Easy,Medium,Hard";
         public string DifficultyRatios { get; set; } = "33,34,33";
         public int QuestionsPerSubdomain { get; set; } = 3;
+        public int TestTypeServiceId { get; set; } = 1;
+        public int TenantId { get; set; } = 1;
     }
 
     public class SubmitAnswerRequest

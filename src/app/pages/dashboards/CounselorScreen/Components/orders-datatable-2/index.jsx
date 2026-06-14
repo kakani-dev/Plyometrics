@@ -30,7 +30,6 @@ import { useSkipper } from "utils/react-table/useSkipper";
 import { SelectedRowsActions } from "./SelectedRowsActions";
 import { SubRowComponent } from "./SubRowComponent";
 import { columns } from "./columns";
-import { candidatesList } from "./data";
 import { Toolbar } from "./Toolbar";
 import { useThemeContext } from "app/contexts/theme/context";
 import { getUserAgentBrowser } from "utils/dom/getUserAgentBrowser";
@@ -39,12 +38,10 @@ import { getUserAgentBrowser } from "utils/dom/getUserAgentBrowser";
 
 const isSafari = getUserAgentBrowser() === "Safari";
 
-export default function CandidatesDatatableV2() {
+export default function CandidatesDatatableV2({ candidates = [], setCandidates }) {
   const { cardSkin } = useThemeContext();
 
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
-
-  const [candidates, setCandidates] = useState([...candidatesList]);
 
   const [tableSettings, setTableSettings] = useState({
     enableSorting: true,
