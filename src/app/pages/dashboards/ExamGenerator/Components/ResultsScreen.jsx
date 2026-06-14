@@ -20,7 +20,7 @@ export default function ResultsScreen({
             <p>Grade {profile.grade || "10"} | {profile.testMode === "adaptive" ? "AI-Powered Adaptive Mode" : "Compact baseline mode"}</p>
           </div>
           <div className="profile-code-box">
-            <span class="label">Permutation Code</span>
+            <span className="label">Permutation Code</span>
             <span className="code">NP-P1028</span>
           </div>
           <div className="action-buttons">

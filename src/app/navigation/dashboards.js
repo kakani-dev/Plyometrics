@@ -63,6 +63,14 @@ export const dashboards = {
             Icon: DocumentTextIcon,
         },
         {
+            id: 'dashboards.newExam',
+            path: path(ROOT_DASHBOARDS, '/new-exam'),
+            type: NAV_TYPE_ITEM,
+            title: 'New Exam',
+            transKey: 'nav.dashboards.newExam',
+            Icon: DocumentTextIcon,
+        },
+        {
             id: 'dashboards.report',
             path: path(ROOT_DASHBOARDS, '/report'),
             type: NAV_TYPE_ITEM,

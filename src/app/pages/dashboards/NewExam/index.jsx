@@ -1,0 +1,574 @@
+import { useState, useEffect, useRef } from "react";
+import { Page } from "components/shared/Page";
+import { DUMMY_QUESTIONS, DUMMY_METRICS } from "./data";
+import WelcomeScreen from "./Components/WelcomeScreen";
+import TestScreen from "./Components/TestScreen";
+import ResultsScreen from "./Components/ResultsScreen";
+import MetricDetailModal from "./Components/MetricDetailModal";
+import "./styles.css";
+
+const API_BASE = "http://localhost:5041/api";
+
+export default function NewExam() {
+  const [currentScreen, setCurrentScreen] = useState("welcome");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [profile, setProfile] = useState({
+    name: "",
+    grade: "",
+    testMode: "adaptive",
+    apiKey: "",
+  });
+  const [sessionId, setSessionId] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [consoleLogs, setConsoleLogs] = useState([
+    "[SYS] NeuroPi Adaptive Assessment engine initialized.",
+    "[SYS] Grade model loaded. Waiting for registration..."
+  ]);
+  const [timerActive, setTimerActive] = useState(false);
+  const [questionTimeSpent, setQuestionTimeSpent] = useState(0);
+  const [selectedMetric, setSelectedMetric] = useState(null);
+  const [metricFilter, setMetricFilter] = useState("all");
+  const [resultsData, setResultsData] = useState(null);
+
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [totalQuestionsCount, setTotalQuestionsCount] = useState(DUMMY_QUESTIONS.length);
+
+  const mapBackendQuestionToFrontend = (bq) => {
+    if (!bq) return null;
+    const id = bq.QID || bq.qid;
+    const domain = bq.Domain || bq.domain;
+    const subdomain = bq.Subdomain || bq.subdomain;
+    const rawType = bq["Question Type"] || bq.questionType || bq.type;
+    const text = bq.Question || bq.questionText || bq.text;
+    const type = (rawType && rawType.toLowerCase() === "mcq") ? "mcq" : "likert";
+    
+    let options = [];
+    if (type === "mcq") {
+      const optA = bq["Option A"] || bq.optionA;
+      const optB = bq["Option B"] || bq.optionB;
+      const optC = bq["Option C"] || bq.optionC;
+      const optD = bq["Option D"] || bq.optionD;
+      
+      if (optA) options.push({ letter: "A", text: optA });
+      if (optB) options.push({ letter: "B", text: optB });
+      if (optC) options.push({ letter: "C", text: optC });
+      if (optD) options.push({ letter: "D", text: optD });
+    }
+    
+    return { id, domain, subdomain, text, type, options };
+  };
+
+  useEffect(() => {
+    let interval = null;
+    if (timerActive) {
+      interval = setInterval(() => {
+        setTimeElapsed((prev) => prev + 1);
+        setQuestionTimeSpent((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  };
+
+  const consoleEndRef = useRef(null);
+  useEffect(() => {
+    if (consoleEndRef.current) {
+      consoleEndRef.current.scrollTop = consoleEndRef.current.scrollHeight;
+    }
+  }, [consoleLogs]);
+
+  const addLog = (message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setConsoleLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
+  };
+
+  const startBackendSession = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/assessment/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentName: profile.name,
+          grade: profile.grade,
+          mode: profile.testMode,
+          apiKey: profile.apiKey,
+        }),
+      });
+      if (!res.ok) throw new Error("Backend unavailable");
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
+  const submitAnswerToBackend = async (qid, responseValue, timeSec) => {
+    if (!sessionId) return null;
+    try {
+      const res = await fetch(`${API_BASE}/assessment/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          qid,
+          responseValue: String(responseValue),
+          timeSec
+        }),
+      });
+      if (!res.ok) throw new Error("Submit failed");
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
+  const fetchResults = async () => {
+    if (!sessionId) return null;
+    try {
+      const res = await fetch(`${API_BASE}/assessment/results/${sessionId}`);
+      if (!res.ok) throw new Error("Results unavailable");
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const storedError = localStorage.getItem("last_error");
+    if (storedError) {
+      console.error("DEBUG - Error from previous session:", storedError);
+      alert("Detected React/App crash from previous load: " + storedError);
+      localStorage.removeItem("last_error");
+    }
+
+    const errorHandler = (event) => {
+      localStorage.setItem("last_error", `Error: ${event.message} at ${event.filename}:${event.lineno}`);
+    };
+
+    const rejectionHandler = (event) => {
+      localStorage.setItem("last_error", `Unhandled Rejection: ${event.reason?.message || String(event.reason)}`);
+    };
+
+    window.addEventListener("error", errorHandler);
+    window.addEventListener("unhandledrejection", rejectionHandler);
+    return () => {
+      window.removeEventListener("error", errorHandler);
+      window.removeEventListener("unhandledrejection", rejectionHandler);
+    };
+  }, []);
+
+  const handleStartTest = async (e) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    console.log("handleStartTest triggered. Profile name:", profile.name, "Grade:", profile.grade);
+
+    if (!profile.name || !profile.grade) {
+      console.warn("handleStartTest: Profile name or grade is missing. Aborting.");
+      alert("Please fill in Student Full Name and select a Grade class before starting.");
+      return;
+    }
+
+    try {
+      addLog(`[REG] Student Profile: ${profile.name} (Grade ${profile.grade})`);
+      addLog(`[ENG] Mode: ${profile.testMode.toUpperCase()}`);
+
+      console.log("Attempting to connect to backend...");
+      const backend = await startBackendSession();
+      if (backend) {
+        setSessionId(backend.sessionId);
+        addLog(`[API] Session created: ${backend.sessionId}`);
+        console.log("Session created successfully:", backend.sessionId, backend);
+        
+        const firstQ = mapBackendQuestionToFrontend(backend.firstQuestion);
+        setCurrentQuestion(firstQ);
+        setTotalQuestionsCount(backend.totalQuestions || 70);
+      } else {
+        addLog("[API] Backend offline, using local mock mode");
+        console.log("Backend connection failed. Falling back to local mock mode.");
+        
+        setCurrentQuestion(DUMMY_QUESTIONS[0]);
+        setTotalQuestionsCount(DUMMY_QUESTIONS.length);
+      }
+
+      addLog("[ENG] Scaling neural baseline parameters...");
+      addLog("[SYS] Starting test session.");
+
+      console.log("Initializing test state...");
+      setCurrentQuestionIndex(0);
+      setSelectedAnswers({});
+      setTimeElapsed(0);
+      setQuestionTimeSpent(0);
+      setTimerActive(true);
+      setCurrentScreen("test");
+      console.log("Screen transitioned to 'test'. Test active.");
+    } catch (err) {
+      console.error("handleStartTest error:", err);
+    }
+  };
+
+  const [generatingAiReport, setGeneratingAiReport] = useState(false);
+
+  const handleDemoReport = () => {
+    const name = profile.name || "Harsh Demo";
+    const grade = profile.grade || "10";
+    setProfile({
+      name,
+      grade,
+      testMode: "adaptive",
+      apiKey: profile.apiKey,
+    });
+
+    const mockGauges = {
+      careerReadiness: 88,
+      riasecClarity: 75,
+      cognitiveIndex: 95,
+      emotionalSustainability: 68
+    };
+    const mockVectors = {
+      dominantRIASEC: "Realistic",
+      dominantBig5: "Conscientiousness",
+      dominantLearning: "Visual",
+      bigFiveBalance: 82,
+      learningPreferenceStrength: 90
+    };
+    const mockAlert = {
+      alertType: "Strong technical alignment",
+      description: "Validity check passed. Student registers exceptional logical reasoning capacity.",
+      alertClass: "alert-success"
+    };
+    const mockRoadmap = {
+      counselorFocus: "Strengths confirmation and growth plan",
+      permutationAction: "Recommend pursuing Science (PCM) with Computer Science. Focus counseling on emotional coping strategies.",
+      priorities: ["Academic Skills", "Stress Management", "Career Exploration"]
+    };
+    const mockStream = {
+      stream: "Science (PCM)",
+      subjects: "Physics, Chemistry, Mathematics",
+      actions: [
+        "Strengthen mathematical foundations and practice structured numerical derivations daily.",
+        "Participate in practical projects like coding, electronics, or robotics to apply physics.",
+        "Solve complex multi-step logical problems to prepare for engineering/technology streams."
+      ],
+      careerFitScore: 86
+    };
+    const mockNarrative = {
+      executiveSummary: "The candidate completed the student profiling battery. Analysis shows high analytical reasoning index with well-developed visual processing.",
+      cognitiveStrengths: "Demonstrates perfect logical deductive capabilities and robust visual cognitive efficiency.",
+      learningStrategy: "High visual preference suggests utilizing diagrams, video explanations, and concept mapping.",
+      careerMapping: "Academic performance index matches streams with rigorous technical foundations.",
+      counselorGuideline: "Ensure balanced study routine. Promote stress management techniques."
+    };
+    
+    setResultsData({
+      profileCode: "NP-P1028",
+      circularGauges: mockGauges,
+      dominantVectors: mockVectors,
+      primaryAlert: mockAlert,
+      counselorRoadmap: mockRoadmap,
+      streamRecommendation: mockStream,
+      localNarrative: mockNarrative,
+      metrics: DUMMY_METRICS
+    });
+
+    setCurrentScreen("results");
+  };
+
+  const handleGenerateAiReport = async () => {
+    if (!profile.apiKey) return;
+    setGeneratingAiReport(true);
+    addLog("[SYS] Generating AI Counseling Report...");
+
+    const promptText = `
+You are an expert educational psychologist and counseling director. Analyze this student psychometric data sheet and synthesize a detailed developmental diagnostic report.
+
+STUDENT PROFILE:
+- Name: ${profile.name || "Student"}
+- Grade: ${profile.grade || "10"}
+- Assessment Code: ${resultsData?.profileCode || "NP-P1028"}
+
+DOMINANT TRAITS:
+- dominant RIASEC: ${resultsData?.dominantVectors?.dominantRIASEC || "Realistic"}
+- dominant Big Five: ${resultsData?.dominantVectors?.dominantBig5 || "Conscientiousness"}
+- Cognitive Band: ${resultsData?.circularGauges?.cognitiveIndex >= 70 ? "High" : resultsData?.circularGauges?.cognitiveIndex >= 40 ? "Moderate" : "Low"} (Index Score: ${resultsData?.circularGauges?.cognitiveIndex || 95}%)
+- Emotional Band: ${resultsData?.circularGauges?.emotionalSustainability >= 70 ? "High" : resultsData?.circularGauges?.emotionalSustainability >= 40 ? "Moderate" : "Low"} (Index Score: ${resultsData?.circularGauges?.emotionalSustainability || 68}%)
+- dominant Learning Style: ${resultsData?.dominantVectors?.dominantLearning || "Visual"}
+- Recommended Stream: ${resultsData?.streamRecommendation?.stream || "Science (PCM)"} (Subjects: ${resultsData?.streamRecommendation?.subjects || "Physics, Chemistry, Mathematics"})
+- Recommended Stream Actions: ${(resultsData?.streamRecommendation?.actions || []).join("; ")}
+
+Write a comprehensive, professional narrative report divided into four sections. Adopt a supportive, guidance-oriented tone.
+Formatting: Do not use markdown titles. Format each section as solid, flowing paragraphs.
+
+Section I: Executive Assessment Summary (Synthesize a detailed review of RIASEC interest, personality traits and developmental indicators).
+Section II: Cognitive Reasoning & Sensory Learning Profile (Detail cognitive strengths and specific classroom learning strategies matching their learning style).
+Section III: Academic and Career Trajectory Mapping (Provide concrete career recommendations matching their RIASEC code and cognitive band, and write an analysis supporting their recommended academic stream).
+Section IV: Guided Counseling & Parental Support Recommendations (List step-by-step counselor focus roadmaps and parental support guidelines).
+`;
+
+    try {
+      let aiText = "";
+      if (sessionId) {
+        // Use backend
+        const res = await fetch(`${API_BASE}/assessment/ai-report`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, apiKey: profile.apiKey }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          aiText = data.reportText || data.ReportText;
+        } else {
+          throw new Error("Backend AI generation failed");
+        }
+      } else {
+        // Direct browser call
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${profile.apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }]
+          })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        } else {
+          throw new Error("Direct Gemini API call failed");
+        }
+      }
+
+      if (aiText) {
+        const sections = aiText.split(/(?:Section I:|Section II:|Section III:|Section IV:|### I\.|### II\.|### III\.|### IV\.|I\.\s+|II\.\s+|III\.\s+|IV\.\s+)/gi);
+        const contentBlocks = [];
+        sections.forEach(s => {
+          const cleanText = s.trim();
+          if (cleanText.length > 50) {
+            contentBlocks.push(cleanText);
+          }
+        });
+
+        let newNarrative = {};
+        if (contentBlocks.length >= 4) {
+          newNarrative = {
+            executiveSummary: contentBlocks[0].replace(/\*/g, ""),
+            cognitiveStrengths: contentBlocks[1].split("\n\n")[0].replace(/\*/g, ""),
+            learningStrategy: contentBlocks[1].split("\n\n").slice(1).join("\n\n").replace(/\*/g, "") || "Learning strategy tailored for student.",
+            careerMapping: contentBlocks[2].replace(/\*/g, ""),
+            counselorGuideline: contentBlocks[3].replace(/\*/g, ""),
+          };
+        } else {
+          const paragraphs = aiText.split("\n\n").filter(p => p.trim().length > 30);
+          if (paragraphs.length >= 4) {
+            newNarrative = {
+              executiveSummary: paragraphs[0].replace(/\*/g, ""),
+              cognitiveStrengths: paragraphs[1].replace(/\*/g, ""),
+              learningStrategy: "",
+              careerMapping: paragraphs[2].replace(/\*/g, ""),
+              counselorGuideline: paragraphs[3].replace(/\*/g, ""),
+            };
+          } else {
+            newNarrative = {
+              executiveSummary: aiText.replace(/\*/g, ""),
+              cognitiveStrengths: "",
+              learningStrategy: "",
+              careerMapping: "",
+              counselorGuideline: "",
+            };
+          }
+        }
+
+        setResultsData(prev => ({
+          ...prev,
+          localNarrative: newNarrative
+        }));
+        addLog("[SYS] AI Report generated successfully.");
+      }
+    } catch (err) {
+      console.error(err);
+      addLog(`[SYS-ERR] AI Generation failed: ${err.message}`);
+      alert("Failed to generate AI report: " + err.message);
+    } finally {
+      setGeneratingAiReport(false);
+    }
+  };
+
+  const handleAnswerSelect = (value) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: value,
+    }));
+  };
+
+  const handleNextQuestion = async () => {
+    const answer = selectedAnswers[currentQuestion.id];
+    if (answer === undefined) return;
+
+    addLog(`[SUB] Q${currentQuestionIndex + 1} (${currentQuestion.subdomain}) answered in ${questionTimeSpent}s.`);
+
+    if (sessionId) {
+      const result = await submitAnswerToBackend(currentQuestion.id, answer, questionTimeSpent);
+      
+      if (result && result.isCompleted) {
+        setTimerActive(false);
+        addLog("[SYS] All questions completed.");
+        
+        const data = await fetchResults();
+        if (data) setResultsData(data);
+        
+        addLog("[SYS] Running diagnostic engine matrix...");
+        addLog("[SYS] Report generated.");
+        setCurrentScreen("results");
+        return;
+      }
+      
+      if (result && result.nextQuestion) {
+        const nextQ = mapBackendQuestionToFrontend(result.nextQuestion);
+        setCurrentQuestion(nextQ);
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setQuestionTimeSpent(0);
+        return;
+      }
+    }
+
+    if (currentQuestionIndex + 1 < DUMMY_QUESTIONS.length) {
+      const nextIdx = currentQuestionIndex + 1;
+      setCurrentQuestion(DUMMY_QUESTIONS[nextIdx]);
+      setCurrentQuestionIndex(nextIdx);
+      setQuestionTimeSpent(0);
+    } else {
+      setTimerActive(false);
+      addLog("[SYS] All questions completed.");
+
+      if (sessionId) {
+        const data = await fetchResults();
+        if (data) setResultsData(data);
+      }
+
+      addLog("[SYS] Running diagnostic engine matrix...");
+      addLog("[SYS] Report generated.");
+      setCurrentScreen("results");
+    }
+  };
+
+  const handleRestart = () => {
+    setProfile({ name: "", grade: "", testMode: "adaptive", apiKey: "" });
+    setSessionId(null);
+    setResultsData(null);
+    setConsoleLogs([
+      "[SYS] NeuroPi Adaptive Assessment engine initialized.",
+      "[SYS] Grade model loaded. Waiting for registration..."
+    ]);
+    setCurrentQuestion(null);
+    setCurrentQuestionIndex(0);
+    setTotalQuestionsCount(DUMMY_QUESTIONS.length);
+    setCurrentScreen("welcome");
+  };
+
+  const progressPercent = totalQuestionsCount > 0
+    ? (currentQuestionIndex / totalQuestionsCount) * 100
+    : 0;
+
+  const getStrokeDashOffset = (percentage) => 251 - (251 * percentage) / 100;
+
+  const filteredMetrics = (resultsData?.metrics || DUMMY_METRICS).filter((m) => {
+    if (metricFilter === "all") return true;
+    return m.layer === metricFilter || m.domain === metricFilter;
+  });
+
+  const handleExportJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+      JSON.stringify({ profile, selectedAnswers, metrics: DUMMY_METRICS, results: resultsData }, null, 2)
+    );
+    const a = document.createElement("a");
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", `NeuroPi_Report_${profile.name || "Student"}.json`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  return (
+    <Page title="New Exam">
+      <div className="new-exam-wrapper neuropi-portal transition-content w-full min-h-screen pb-12">
+        <header className="app-header">
+          <div className="header-container">
+            <div className="logo-area">
+              <svg className="brain-logo" viewBox="0 0 24 24" width="32" height="32">
+                <path fill="currentColor" d="M12,3c-4.97,0-9,4.03-9,9c0,2.12,0.74,4.07,1.97,5.61L4.35,19.4c-0.39,0.39-0.39,1.02,0,1.41c0.39,0.39,1.02,0.39,1.41,0l1.9-1.9C9.07,19.58,10.48,20,12,20c4.97,0,9-4.03,9-9S16.97,3,12,3z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S15.31,18,12,18z"/>
+                <path fill="currentColor" opacity="0.8" d="M12,8c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4S14.21,8,12,8z M12,14c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,14,12,14z"/>
+              </svg>
+              <div className="brand-text">
+                <h1>NeuroPi</h1>
+                <span className="sub-brand">Student Development Intelligence</span>
+              </div>
+            </div>
+            {currentScreen !== "welcome" && (
+              <div className="header-status">
+                <span className="status-badge">{profile.name}</span>
+                <span className="status-badge mode-badge">
+                  {profile.testMode === "adaptive" ? "Adaptive Engine" : "Compact Mode"}
+                </span>
+              </div>
+            )}
+          </div>
+        </header>
+
+        <main className="app-main">
+          {currentScreen === "welcome" && (
+            <WelcomeScreen
+              profile={profile}
+              setProfile={setProfile}
+              handleStartTest={handleStartTest}
+              handleDemoReport={handleDemoReport}
+            />
+          )}
+
+          {currentScreen === "test" && currentQuestion && (
+            <TestScreen
+              currentQuestion={currentQuestion}
+              currentQuestionIndex={currentQuestionIndex}
+              questionsLength={totalQuestionsCount}
+              timeElapsed={timeElapsed}
+              formatTime={formatTime}
+              progressPercent={progressPercent}
+              selectedAnswers={selectedAnswers}
+              handleAnswerSelect={handleAnswerSelect}
+              questionTimeSpent={questionTimeSpent}
+              handleNextQuestion={handleNextQuestion}
+              consoleLogs={consoleLogs}
+              consoleEndRef={consoleEndRef}
+              profile={profile}
+            />
+          )}
+
+          {currentScreen === "results" && (
+            <ResultsScreen
+              profile={profile}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              handleRestart={handleRestart}
+              handleExportJSON={handleExportJSON}
+              metricFilter={metricFilter}
+              setMetricFilter={setMetricFilter}
+              filteredMetrics={filteredMetrics}
+              setSelectedMetric={setSelectedMetric}
+              getStrokeDashOffset={getStrokeDashOffset}
+              resultsData={resultsData}
+              generatingAiReport={generatingAiReport}
+              handleGenerateAiReport={handleGenerateAiReport}
+            />
+          )}
+        </main>
+
+        <MetricDetailModal
+          selectedMetric={selectedMetric}
+          setSelectedMetric={setSelectedMetric}
+        />
+      </div>
+    </Page>
+  );
+}

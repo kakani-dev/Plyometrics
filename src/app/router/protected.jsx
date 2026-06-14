@@ -64,6 +64,12 @@ const protectedRoutes = {
               }),
             },
             {
+              path: "new-exam",
+              lazy: async () => ({
+                Component: (await import("app/pages/dashboards/NewExam")).default,
+              }),
+            },
+            {
               path: "report",
               lazy: async () => ({
                 Component: (await import("app/pages/dashboards/CombinedReport")).default,
