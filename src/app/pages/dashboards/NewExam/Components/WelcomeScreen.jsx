@@ -1,4 +1,31 @@
+import { useState, useEffect } from "react";
+
 export default function WelcomeScreen({ profile, setProfile, handleStartTest, handleDemoReport }) {
+  const [grades, setGrades] = useState([
+    { Value: "8", Label: "Grade 8" },
+    { Value: "9", Label: "Grade 9" },
+    { Value: "10", Label: "Grade 10" },
+    { Value: "11", Label: "Grade 11" },
+    { Value: "12", Label: "Grade 12" }
+  ]);
+
+  useEffect(() => {
+    async function fetchGrades() {
+      try {
+        const res = await fetch("http://localhost:5041/api/assessment/grades");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setGrades(data);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch grades from API, using default list:", err);
+      }
+    }
+    fetchGrades();
+  }, []);
+
   return (
     <div className="screen active">
       <div className="welcome-card glass-panel">
@@ -20,11 +47,11 @@ export default function WelcomeScreen({ profile, setProfile, handleStartTest, ha
                 <select required value={profile.grade}
                   onChange={(e) => setProfile({ ...profile, grade: e.target.value })}>
                   <option value="" disabled>Select Grade...</option>
-                  <option value="8">Grade 8</option>
-                  <option value="9">Grade 9</option>
-                  <option value="10">Grade 10</option>
-                  <option value="11">Grade 11</option>
-                  <option value="12">Grade 12</option>
+                  {grades.map((g) => (
+                    <option key={g.Value || g.value} value={g.Value || g.value}>
+                      {g.Label || g.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="form-group">

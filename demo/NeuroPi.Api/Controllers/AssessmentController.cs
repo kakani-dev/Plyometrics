@@ -157,6 +157,21 @@ namespace NeuroPi.Api.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        [HttpGet("grades")]
+        public async Task<IActionResult> GetGrades()
+        {
+            try
+            {
+                var list = await _assessmentService.GetGradesAsync();
+                var grades = list.Select(g => new { Value = g, Label = $"Grade {g}" }).ToArray();
+                return Ok(grades);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 
     public class StartSessionRequest

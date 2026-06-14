@@ -23,6 +23,7 @@ namespace NeuroPi.Api.Services
         Task<AssessmentResultsDto> CompileResultsAsync(Guid sessionId);
         Task<bool> PopulateDemoResponsesAsync(Guid sessionId);
         Task<List<AssessmentSession>> GetHistoryAsync();
+        Task<List<string>> GetGradesAsync();
     }
 
     public class AssessmentService : IAssessmentService
@@ -927,6 +928,48 @@ namespace NeuroPi.Api.Services
             _context.Sessions.Update(session);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<string>> GetGradesAsync()
+        {
+            await InitializeAsync();
+            var gradeBands = await _context.Questions
+                .Select(q => q.GradeBand)
+                .Where(gb => !string.IsNullOrEmpty(gb))
+                .Distinct()
+                .ToListAsync();
+
+            var grades = new SortedSet<int>();
+            foreach (var band in gradeBands)
+            {
+                // Parse ranges like "8-12" or "8 to 12"
+                var parts = band.Split(new[] { '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && int.TryParse(parts[0], out int start) && int.TryParse(parts[1], out int end))
+                {
+                    for (int i = start; i <= end; i++)
+                    {
+                        grades.Add(i);
+                    }
+                }
+                else if (parts.Length == 3 && parts[1].Equals("to", StringComparison.OrdinalIgnoreCase) && int.TryParse(parts[0], out int s) && int.TryParse(parts[2], out int e))
+                {
+                    for (int i = s; i <= e; i++)
+                    {
+                        grades.Add(i);
+                    }
+                }
+                else if (int.TryParse(band, out int singleGrade))
+                {
+                    grades.Add(singleGrade);
+                }
+            }
+
+            if (grades.Count == 0)
+            {
+                return new List<string> { "8", "9", "10", "11", "12" };
+            }
+
+            return grades.Select(g => g.ToString()).ToList();
         }
 
         public async Task<List<AssessmentSession>> GetHistoryAsync()
