@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import neuropiLogo from "../../../../assets/Neuuropi-B8yLP3Ei.svg";
 import { Page } from "components/shared/Page";
 import { toast } from "sonner";
 import { DUMMY_QUESTIONS, DUMMY_METRICS } from "./data";
@@ -445,13 +446,10 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
         <header className="app-header">
           <div className="header-container">
             <div className="logo-area">
-              <svg className="brain-logo" viewBox="0 0 24 24" width="32" height="32">
-                <path fill="currentColor" d="M12,3c-4.97,0-9,4.03-9,9c0,2.12,0.74,4.07,1.97,5.61L4.35,19.4c-0.39,0.39-0.39,1.02,0,1.41c0.39,0.39,1.02,0.39,1.41,0l1.9-1.9C9.07,19.58,10.48,20,12,20c4.97,0,9-4.03,9-9S16.97,3,12,3z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S15.31,18,12,18z" />
-                <path fill="currentColor" opacity="0.8" d="M12,8c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4S14.21,8,12,8z M12,14c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,14,12,14z" />
-              </svg>
+              <img src={neuropiLogo} alt="NeuroPi Logo" className="brain-logo" style={{ width: 150, height: "auto" }} />
               <div className="brand-text">
-                <h1>NeuroPi</h1>
-                <span className="sub-brand">Student Development Intelligence</span>
+                <h1>neuropi</h1>
+                <span className="sub-brand">pi tech pvt ltd</span>
               </div>
             </div>
             {currentScreen !== "welcome" && (

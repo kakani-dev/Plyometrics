@@ -45,13 +45,12 @@
 }
 
 .new-exam-wrapper .app-header {
-  background-color: rgba(6, 10, 19, 0.85);
-  backdrop-filter: blur(12px);
+  background-color: rgba(6, 10, 19, 0.95);
   border-bottom: 1px solid var(--border-glass);
   padding: 1rem 2rem;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .new-exam-wrapper .header-container {
