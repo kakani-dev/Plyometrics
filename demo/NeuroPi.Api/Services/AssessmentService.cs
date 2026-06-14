@@ -17,13 +17,14 @@ namespace NeuroPi.Api.Services
         Task InitializeAsync();
         List<Question> GetQuestions();
         AssessmentRules GetRules();
-        Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey);
+        Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey, string difficultyTypes = "Easy,Medium,Hard", string difficultyRatios = "33,34,33", int questionsPerSubdomain = 3);
         Task<Question?> GetNextQuestionAsync(Guid sessionId);
         Task<Question?> SubmitAnswerAsync(Guid sessionId, string qid, string responseValue, int timeSec);
         Task<AssessmentResultsDto> CompileResultsAsync(Guid sessionId);
         Task<bool> PopulateDemoResponsesAsync(Guid sessionId);
         Task<List<AssessmentSession>> GetHistoryAsync();
         Task<List<string>> GetGradesAsync();
+        Task<AssessmentSession?> GetSessionAsync(Guid sessionId);
     }
 
     public class AssessmentService : IAssessmentService
@@ -148,7 +149,13 @@ namespace NeuroPi.Api.Services
         }
         public AssessmentRules GetRules() => _rules;
 
-        public async Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey)
+        public async Task<AssessmentSession?> GetSessionAsync(Guid sessionId)
+        {
+            await InitializeAsync();
+            return await _context.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        }
+
+        public async Task<AssessmentSession> StartSessionAsync(string studentName, string grade, string mode, string apiKey, string difficultyTypes = "Easy,Medium,Hard", string difficultyRatios = "33,34,33", int questionsPerSubdomain = 3)
         {
             await InitializeAsync();
 
@@ -159,7 +166,10 @@ namespace NeuroPi.Api.Services
                 Mode = mode.ToLower(),
                 ApiKey = apiKey,
                 StartTime = DateTime.UtcNow,
-                CognitiveDifficultyState = "Logic:Medium,Numerical:Medium,Verbal:Medium,Abstract:Medium,Spatial:Medium"
+                DifficultyTypes = difficultyTypes,
+                DifficultyRatios = difficultyRatios,
+                QuestionsPerSubdomain = questionsPerSubdomain,
+                CognitiveDifficultyState = "Logic:0,Numerical:0,Verbal:0,Abstract:0,Spatial:0"
             };
 
             _context.Sessions.Add(session);
@@ -229,23 +239,24 @@ namespace NeuroPi.Api.Services
 
                 if (currentMetric.Domain == "Cognitive Ability")
                 {
-                    var diffState = GetCognitiveDifficulty(session.CognitiveDifficultyState, currentMetric.Subdomain);
-                    
-                    // Partition cognitive questions: Easy (0-6), Medium (7-13), Hard (14-19)
-                    List<Question> diffPool;
-                    if (diffState == "Easy")
-                    {
-                        diffPool = subdomainQuestions.Take(7).ToList();
-                    }
-                    else if (diffState == "Medium")
-                    {
-                        diffPool = subdomainQuestions.Skip(7).Take(7).ToList();
-                    }
-                    else // Hard
-                    {
-                        diffPool = subdomainQuestions.Skip(14).Take(6).ToList();
-                    }
+                    var levelIndex = GetCognitiveDifficultyIndex(session.CognitiveDifficultyState, currentMetric.Subdomain);
+                    var types = session.DifficultyTypes.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    var ratios = session.DifficultyRatios.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(r => int.TryParse(r, out int v) ? v : 0).ToList();
 
+                    if (ratios.Count == 0) ratios = Enumerable.Repeat(100 / types.Length, types.Length).ToList();
+
+                    int total = subdomainQuestions.Count;
+                    int start = 0;
+                    for (int i = 0; i < levelIndex && i < ratios.Count; i++)
+                    {
+                        start += (int)Math.Round(total * ratios[i] / 100.0);
+                    }
+                    int count = levelIndex < ratios.Count
+                        ? (int)Math.Round(total * ratios[levelIndex] / 100.0)
+                        : 0;
+
+                    var diffPool = subdomainQuestions.Skip(start).Take(count).ToList();
                     selectedQ = diffPool.FirstOrDefault(q => !askedQids.Contains(q.QID));
                     if (selectedQ == null)
                     {
@@ -342,68 +353,28 @@ namespace NeuroPi.Api.Services
                 {
                     var currentMetric = METRIC_DEFINITIONS[session.CurrentMetricIndex];
 
-                    // Cognitive diff adjustment
                     if (question.Domain == "Cognitive Ability")
                     {
                         bool isCorrect = responseValue.Equals(question.CorrectKey, StringComparison.OrdinalIgnoreCase);
-                        var currentDiff = GetCognitiveDifficulty(session.CognitiveDifficultyState, currentMetric.Subdomain);
-                        
-                        string nextDiff = currentDiff;
-                        if (isCorrect)
-                        {
-                            if (currentDiff == "Medium") nextDiff = "Hard";
-                            else if (currentDiff == "Easy") nextDiff = "Medium";
-                        }
-                        else
-                        {
-                            if (currentDiff == "Medium") nextDiff = "Easy";
-                            else if (currentDiff == "Hard") nextDiff = "Medium";
-                        }
+                        var currentIndex = GetCognitiveDifficultyIndex(session.CognitiveDifficultyState, currentMetric.Subdomain);
+                        var types = session.DifficultyTypes.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-                        session.CognitiveDifficultyState = UpdateCognitiveDifficulty(session.CognitiveDifficultyState, currentMetric.Subdomain, nextDiff);
+                        int nextIndex = currentIndex;
+                        if (isCorrect && currentIndex < types.Length - 1)
+                            nextIndex = currentIndex + 1;
+                        else if (!isCorrect && currentIndex > 0)
+                            nextIndex = currentIndex - 1;
+
+                        session.CognitiveDifficultyState = UpdateCognitiveDifficulty(session.CognitiveDifficultyState, currentMetric.Subdomain, nextIndex);
                     }
 
                     session.CurrentQuestionIndex++;
 
-                    // Early bypassing check for Likert (non-cognitive)
                     bool shouldProceedToNextMetric = false;
-                    if (question.Domain == "Cognitive Ability")
+                    int qps = session.QuestionsPerSubdomain;
+                    if (session.CurrentQuestionIndex >= qps)
                     {
-                        if (session.CurrentQuestionIndex >= 3)
-                        {
-                            shouldProceedToNextMetric = true;
-                        }
-                    }
-                    else
-                    {
-                        var subdomainResponses = session.Responses.Where(r => r.Subdomain == currentMetric.Subdomain).ToList();
-                        
-                        // We check hesitation (>18s) in responses
-                        bool hasHesitation = subdomainResponses.Any(r => r.TimeSec > 18);
-
-                        if (session.CurrentQuestionIndex >= 3)
-                        {
-                            shouldProceedToNextMetric = true;
-                        }
-                        else if (session.CurrentQuestionIndex == 2)
-                        {
-                            if (!hasHesitation && subdomainResponses.Count >= 2)
-                            {
-                                // Check consistency
-                                var firstScore = CalculateResponseScore(subdomainResponses[0]);
-                                var secondScore = CalculateResponseScore(subdomainResponses[1]);
-
-                                bool isConsistentHigh = firstScore >= 75 && secondScore >= 75;
-                                bool isConsistentLow = firstScore <= 25 && secondScore <= 25;
-                                bool isConsistentNeutral = firstScore == 50 && secondScore == 50;
-
-                                if (isConsistentHigh || isConsistentLow || isConsistentNeutral)
-                                {
-                                    shouldProceedToNextMetric = true;
-                                    session.SavedQuestionsCount++;
-                                }
-                            }
-                        }
+                        shouldProceedToNextMetric = true;
                     }
 
                     if (shouldProceedToNextMetric)
@@ -420,21 +391,30 @@ namespace NeuroPi.Api.Services
             return await GetNextQuestionAsync(sessionId);
         }
 
-        private static string GetCognitiveDifficulty(string state, string subdomain)
+        private static int GetCognitiveDifficultyIndex(string state, string subdomain)
         {
             var parts = state.Split(',');
             foreach (var part in parts)
             {
                 var kv = part.Split(':');
-                if (kv.Length == 2 && kv[0] == subdomain)
+                if (kv.Length == 2 && kv[0] == subdomain && int.TryParse(kv[1], out int idx))
                 {
-                    return kv[1];
+                    return idx;
                 }
             }
-            return "Medium";
+            return 0;
         }
 
-        private static string UpdateCognitiveDifficulty(string state, string subdomain, string nextDiff)
+        private static string GetCognitiveDifficulty(string state, string subdomain, string difficultyTypes)
+        {
+            int idx = GetCognitiveDifficultyIndex(state, subdomain);
+            var types = difficultyTypes.Split(',');
+            if (idx >= 0 && idx < types.Length)
+                return types[idx];
+            return types[0];
+        }
+
+        private static string UpdateCognitiveDifficulty(string state, string subdomain, int nextLevelIndex)
         {
             var parts = state.Split(',').ToList();
             for (int i = 0; i < parts.Count; i++)
@@ -442,7 +422,7 @@ namespace NeuroPi.Api.Services
                 var kv = parts[i].Split(':');
                 if (kv.Length == 2 && kv[0] == subdomain)
                 {
-                    parts[i] = $"{subdomain}:{nextDiff}";
+                    parts[i] = $"{subdomain}:{nextLevelIndex}";
                     break;
                 }
             }

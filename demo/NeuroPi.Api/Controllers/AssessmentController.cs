@@ -1,8 +1,9 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NeuroPi.Api.Models;
 using NeuroPi.Api.Services;
+using System;
+using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NeuroPi.Api.Controllers
 {
@@ -30,19 +31,22 @@ namespace NeuroPi.Api.Controllers
             try
             {
                 var session = await _assessmentService.StartSessionAsync(
-                    request.StudentName, request.Grade, request.Mode, request.ApiKey);
+                    request.StudentName, request.Grade, "adaptive", request.ApiKey,
+                    request.DifficultyTypes, request.DifficultyRatios, request.QuestionsPerSubdomain);
 
                 var firstQuestion = await _assessmentService.GetNextQuestionAsync(session.Id);
 
-                int totalQ = session.Mode == "compact" ? 84 : 70; // 70 is estimated adaptive max
+                int totalQ = 27 * session.QuestionsPerSubdomain + 3;
 
                 return Ok(new
                 {
                     sessionId = session.Id,
-                    mode = session.Mode,
                     studentName = session.StudentName,
                     firstQuestion = firstQuestion,
-                    totalQuestions = totalQ
+                    totalQuestions = totalQ,
+                    difficultyTypes = session.DifficultyTypes,
+                    difficultyRatios = session.DifficultyRatios,
+                    cognitiveDifficultyState = session.CognitiveDifficultyState
                 });
             }
             catch (Exception ex)
@@ -59,12 +63,13 @@ namespace NeuroPi.Api.Controllers
                 var nextQ = await _assessmentService.SubmitAnswerAsync(
                     request.SessionId, request.QID, request.ResponseValue, request.TimeSec);
 
-                var results = await _assessmentService.GetNextQuestionAsync(request.SessionId); // Wait, nextQ is already fetched by SubmitAnswerAsync
+                var session = await _assessmentService.GetSessionAsync(request.SessionId);
 
                 return Ok(new
                 {
                     nextQuestion = nextQ,
-                    isCompleted = nextQ == null
+                    isCompleted = nextQ == null,
+                    cognitiveDifficultyState = session?.CognitiveDifficultyState
                 });
             }
             catch (Exception ex)
@@ -78,7 +83,9 @@ namespace NeuroPi.Api.Controllers
         {
             try
             {
+
                 var results = await _assessmentService.CompileResultsAsync(sessionId);
+
                 return Ok(results);
             }
             catch (KeyNotFoundException)
@@ -178,8 +185,10 @@ namespace NeuroPi.Api.Controllers
     {
         public string StudentName { get; set; } = string.Empty;
         public string Grade { get; set; } = "10";
-        public string Mode { get; set; } = "adaptive"; // "adaptive" or "compact"
         public string ApiKey { get; set; } = string.Empty;
+        public string DifficultyTypes { get; set; } = "Easy,Medium,Hard";
+        public string DifficultyRatios { get; set; } = "33,34,33";
+        public int QuestionsPerSubdomain { get; set; } = 3;
     }
 
     public class SubmitAnswerRequest

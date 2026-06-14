@@ -1,0 +1,26 @@
+{
+  "request": {
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "You are an expert educational psychologist..."
+          }
+        ]
+      }
+    ]
+  },
+  "response": {
+    "candidates": [
+      {
+        "content": {
+          "parts": [
+            {
+              "text": "Generated report text here..."
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

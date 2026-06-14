@@ -9,8 +9,20 @@ const LIKERT_LABELS = [
 export default function TestScreen({
   currentQuestion, currentQuestionIndex, questionsLength, timeElapsed,
   formatTime, progressPercent, selectedAnswers, handleAnswerSelect,
-  questionTimeSpent, handleNextQuestion, consoleLogs, consoleEndRef, profile,
+  questionTimeSpent, handleNextQuestion, consoleLogs, consoleEndRef,
+  servedQuestionsHistory = [],
 }) {
+  const subdomainCounts = {};
+  const difficultyCounts = {};
+
+  servedQuestionsHistory.forEach((q) => {
+    const sub = q.subdomain || "Unknown";
+    subdomainCounts[sub] = (subdomainCounts[sub] || 0) + 1;
+
+    const diff = q.difficulty || "Unknown";
+    difficultyCounts[diff] = (difficultyCounts[diff] || 0) + 1;
+  });
+
   if (!currentQuestion) {
     console.error("TestScreen rendered but currentQuestion is undefined.");
     return (
@@ -121,7 +133,7 @@ export default function TestScreen({
             <div className="stat-row">
               <span>Questions Saved:</span>
               <span className="stat-val text-high">
-                {profile.testMode === "adaptive" ? Math.floor(currentQuestionIndex / 2) * 3 : 0}
+                {Math.floor(currentQuestionIndex / 2) * 3}
               </span>
             </div>
             <div className="stat-row">
@@ -129,6 +141,39 @@ export default function TestScreen({
               <span className="stat-val text-high">Stable</span>
             </div>
           </div>
+          <details className="debug-panel-details" open>
+            <summary className="debug-panel-summary">🔍 Adaptive Engine Debugger</summary>
+            <div className="debug-panel-content">
+              <div className="debug-section">
+                <h4>Subdomain Distribution</h4>
+                <div className="debug-grid">
+                  {Object.entries(subdomainCounts).map(([sub, count]) => (
+                    <div key={sub} className="debug-row">
+                      <span className="debug-label">{sub}</span>
+                      <span className="debug-value">{count} q</span>
+                    </div>
+                  ))}
+                  {Object.keys(subdomainCounts).length === 0 && (
+                    <span className="debug-empty">No questions served yet.</span>
+                  )}
+                </div>
+              </div>
+              <div className="debug-section">
+                <h4>Difficulty Levels served</h4>
+                <div className="debug-grid">
+                  {Object.entries(difficultyCounts).map(([level, count]) => (
+                    <div key={level} className="debug-row">
+                      <span className="debug-label">{level}</span>
+                      <span className="debug-value text-emerald">{count} q</span>
+                    </div>
+                  ))}
+                  {Object.keys(difficultyCounts).length === 0 && (
+                    <span className="debug-empty">No questions served yet.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </div>

@@ -55,21 +55,76 @@ export default function WelcomeScreen({ profile, setProfile, handleStartTest, ha
                 </select>
               </div>
               <div className="form-group">
-                <label>Assessment Protocol <span className="required">*</span></label>
-                <select value={profile.testMode}
-                  onChange={(e) => setProfile({ ...profile, testMode: e.target.value })}>
-                  <option value="adaptive">AI-Powered Adaptive Assessment (Dynamic Branching)</option>
-                  <option value="compact">Compact Assessment (84-Question Fixed Baseline)</option>
-                </select>
-                <p className="form-hint">
-                  Adaptive Mode dynamically scales question difficulty and branches domains based on consistency.
-                </p>
-              </div>
-              <div className="form-group">
                 <label>Google AI Studio API Key <span className="optional">(Optional)</span></label>
                 <input type="password" placeholder="AI Studio API Key (AI-powered narrative report)..."
                   value={profile.apiKey} onChange={(e) => setProfile({ ...profile, apiKey: e.target.value })} />
               </div>
+              <details className="custom-difficulty-details">
+                <summary className="custom-difficulty-summary">Custom Difficulty Distribution (Optional)</summary>
+                <div className="custom-difficulty-content">
+                  <div className="form-group">
+                    <label>Difficulty Levels</label>
+                    <select
+                      value={
+                        profile.difficultyTypes === "Easy,Medium,Hard" ||
+                        profile.difficultyTypes === "Easy,Medium" ||
+                        profile.difficultyTypes === "Medium,Hard" ||
+                        profile.difficultyTypes === ""
+                          ? profile.difficultyTypes
+                          : "custom"
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "custom") {
+                          setProfile({ ...profile, difficultyTypes: "Easy,Medium,Hard,Extreme" });
+                        } else {
+                          let ratio = "";
+                          if (val === "Easy,Medium,Hard") ratio = "33,34,33";
+                          else if (val === "Easy,Medium") ratio = "50,50";
+                          else if (val === "Medium,Hard") ratio = "50,50";
+                          setProfile({ ...profile, difficultyTypes: val, difficultyRatios: ratio });
+                        }
+                      }}
+                    >
+                      <option value="">Default (Easy, Medium, Hard)</option>
+                      <option value="Easy,Medium,Hard">Easy, Medium, Hard</option>
+                      <option value="Easy,Medium">Easy, Medium</option>
+                      <option value="Medium,Hard">Medium, Hard</option>
+                      <option value="custom">Custom Configuration...</option>
+                    </select>
+                    <p className="form-hint">Select cognitive difficulty level presets.</p>
+                  </div>
+
+                  {profile.difficultyTypes !== "Easy,Medium,Hard" &&
+                    profile.difficultyTypes !== "Easy,Medium" &&
+                    profile.difficultyTypes !== "Medium,Hard" &&
+                    profile.difficultyTypes !== "" && (
+                      <div className="form-group">
+                        <label>Custom Difficulty Levels <span className="required">*</span></label>
+                        <input type="text" placeholder="e.g. Easy,Medium,Hard,Expert" required
+                          value={profile.difficultyTypes || ""}
+                          onChange={(e) => setProfile({ ...profile, difficultyTypes: e.target.value })} />
+                        <p className="form-hint">Enter comma-separated level names.</p>
+                      </div>
+                    )}
+
+                  <div className="form-group">
+                    <label>Difficulty Ratios</label>
+                    <input type="text" placeholder="e.g. 33,34,33"
+                      value={profile.difficultyRatios || ""}
+                      onChange={(e) => setProfile({ ...profile, difficultyRatios: e.target.value })} />
+                    <p className="form-hint">Comma-separated percentages (must sum to 100). Defaults to: 33,34,33</p>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Questions Per Subdomain</label>
+                    <input type="number" min="1" max="15" placeholder="e.g. 3"
+                      value={profile.questionsPerSubdomain || ""}
+                      onChange={(e) => setProfile({ ...profile, questionsPerSubdomain: e.target.value })} />
+                    <p className="form-hint">Number of questions per cognitive subdomain. Defaults to 3.</p>
+                  </div>
+                </div>
+              </details>
               <div className="action-buttons">
                 <button type="button" className="btn btn-primary btn-glow" style={{ width: '100%' }} onClick={handleStartTest}>
                   Start Assessment

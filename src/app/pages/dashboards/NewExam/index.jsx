@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { Page } from "components/shared/Page";
+import { toast } from "sonner";
 import { DUMMY_QUESTIONS, DUMMY_METRICS } from "./data";
+import {
+  startBackendSession,
+  submitAnswerToBackend,
+  fetchResults,
+  generateAiReportBackend,
+  generateAiReportDirect,
+} from "./apicalling";
 import WelcomeScreen from "./Components/WelcomeScreen";
 import TestScreen from "./Components/TestScreen";
 import ResultsScreen from "./Components/ResultsScreen";
 import MetricDetailModal from "./Components/MetricDetailModal";
 import "./styles.css";
-
-const API_BASE = "http://localhost:5041/api";
 
 export default function NewExam() {
   const [currentScreen, setCurrentScreen] = useState("welcome");
@@ -15,9 +21,12 @@ export default function NewExam() {
   const [profile, setProfile] = useState({
     name: "",
     grade: "",
-    testMode: "adaptive",
     apiKey: "",
+    difficultyTypes: "",
+    difficultyRatios: "",
+    questionsPerSubdomain: "",
   });
+  const [servedQuestionsHistory, setServedQuestionsHistory] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -44,6 +53,8 @@ export default function NewExam() {
     const text = bq.Question || bq.questionText || bq.text;
     const type = (rawType && rawType.toLowerCase() === "mcq") ? "mcq" : "likert";
     
+    const difficulty = bq.Difficulty || bq.difficulty || "Unknown";
+    
     let options = [];
     if (type === "mcq") {
       const optA = bq["Option A"] || bq.optionA;
@@ -57,7 +68,7 @@ export default function NewExam() {
       if (optD) options.push({ letter: "D", text: optD });
     }
     
-    return { id, domain, subdomain, text, type, options };
+    return { id, domain, subdomain, text, type, options, difficulty };
   };
 
   useEffect(() => {
@@ -87,56 +98,6 @@ export default function NewExam() {
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     setConsoleLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
-  };
-
-  const startBackendSession = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/assessment/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentName: profile.name,
-          grade: profile.grade,
-          mode: profile.testMode,
-          apiKey: profile.apiKey,
-        }),
-      });
-      if (!res.ok) throw new Error("Backend unavailable");
-      return await res.json();
-    } catch {
-      return null;
-    }
-  };
-
-  const submitAnswerToBackend = async (qid, responseValue, timeSec) => {
-    if (!sessionId) return null;
-    try {
-      const res = await fetch(`${API_BASE}/assessment/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          qid,
-          responseValue: String(responseValue),
-          timeSec
-        }),
-      });
-      if (!res.ok) throw new Error("Submit failed");
-      return await res.json();
-    } catch {
-      return null;
-    }
-  };
-
-  const fetchResults = async () => {
-    if (!sessionId) return null;
-    try {
-      const res = await fetch(`${API_BASE}/assessment/results/${sessionId}`);
-      if (!res.ok) throw new Error("Results unavailable");
-      return await res.json();
-    } catch {
-      return null;
-    }
   };
 
   useEffect(() => {
@@ -175,23 +136,30 @@ export default function NewExam() {
 
     try {
       addLog(`[REG] Student Profile: ${profile.name} (Grade ${profile.grade})`);
-      addLog(`[ENG] Mode: ${profile.testMode.toUpperCase()}`);
 
       console.log("Attempting to connect to backend...");
-      const backend = await startBackendSession();
+      const backend = await startBackendSession(profile);
       if (backend) {
         setSessionId(backend.sessionId);
         addLog(`[API] Session created: ${backend.sessionId}`);
+        if (backend.cognitiveDifficultyState) {
+          addLog(`[ENG] Difficulty State: ${backend.cognitiveDifficultyState}`);
+        }
         console.log("Session created successfully:", backend.sessionId, backend);
         
         const firstQ = mapBackendQuestionToFrontend(backend.firstQuestion);
         setCurrentQuestion(firstQ);
+        if (firstQ) {
+          setServedQuestionsHistory([firstQ]);
+        }
         setTotalQuestionsCount(backend.totalQuestions || 70);
       } else {
         addLog("[API] Backend offline, using local mock mode");
         console.log("Backend connection failed. Falling back to local mock mode.");
         
-        setCurrentQuestion(DUMMY_QUESTIONS[0]);
+        const firstMockQ = DUMMY_QUESTIONS[0];
+        setCurrentQuestion(firstMockQ);
+        setServedQuestionsHistory([firstMockQ]);
         setTotalQuestionsCount(DUMMY_QUESTIONS.length);
       }
 
@@ -219,8 +187,10 @@ export default function NewExam() {
     setProfile({
       name,
       grade,
-      testMode: "adaptive",
       apiKey: profile.apiKey,
+      difficultyTypes: "",
+      difficultyRatios: "",
+      questionsPerSubdomain: "",
     });
 
     const mockGauges = {
@@ -312,33 +282,9 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
     try {
       let aiText = "";
       if (sessionId) {
-        // Use backend
-        const res = await fetch(`${API_BASE}/assessment/ai-report`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId, apiKey: profile.apiKey }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          aiText = data.reportText || data.ReportText;
-        } else {
-          throw new Error("Backend AI generation failed");
-        }
+        aiText = await generateAiReportBackend(sessionId, profile.apiKey) || "";
       } else {
-        // Direct browser call
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${profile.apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }]
-          })
-        });
-        if (response.ok) {
-          const result = await response.json();
-          aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        } else {
-          throw new Error("Direct Gemini API call failed");
-        }
+        aiText = await generateAiReportDirect(profile.apiKey, promptText) || "";
       }
 
       if (aiText) {
@@ -407,16 +353,85 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
     const answer = selectedAnswers[currentQuestion.id];
     if (answer === undefined) return;
 
+    if (currentQuestionIndex + 1 === totalQuestionsCount) {
+      toast.success("Assessment complete! Preparing your results report...");
+      
+      const subdomainsList = [
+        "Realistic", "Investigative", "Openness", "Conscientiousness", "Abstract Reasoning",
+        "Logical Deduction", "Stress Tolerance", "Resilience", "Visual Preference", "Kinesthetic Preference",
+        "Artistic", "Social", "Enterprising", "Conventional", "Validity", "Extraversion",
+        "Agreeableness", "Neuroticism", "Numerical", "Logic", "Verbal", "Abstract", "Spatial",
+        "Stress", "Confidence", "Coping", "Visual", "Auditory", "Kinesthetic", "ReadingWriting",
+        "Motivation", "StudyHabits", "CareerClarity"
+      ];
+      
+      const finalSubdomains = {};
+      subdomainsList.forEach(sub => {
+        finalSubdomains[sub] = {
+          "Easy": 0,
+          "Medium": 0,
+          "Hard": 0
+        };
+      });
+
+      const finalDifficulties = {
+        "Easy": 0,
+        "Medium": 0,
+        "Hard": 0
+      };
+
+      servedQuestionsHistory.forEach((q) => {
+        const sub = q.subdomain;
+        const diff = q.difficulty;
+        
+        if (sub) {
+          if (!finalSubdomains[sub]) {
+            finalSubdomains[sub] = {
+              "Easy": 0,
+              "Medium": 0,
+              "Hard": 0
+            };
+          }
+          if (diff && diff in finalSubdomains[sub]) {
+            finalSubdomains[sub][diff]++;
+          } else if (diff) {
+            finalSubdomains[sub][diff] = (finalSubdomains[sub][diff] || 0) + 1;
+          }
+        }
+        
+        if (diff && diff in finalDifficulties) {
+          finalDifficulties[diff]++;
+        } else if (diff) {
+          finalDifficulties[diff] = (finalDifficulties[diff] || 0) + 1;
+        }
+      });
+
+      const downloadData = {
+        subdomainCounts: finalSubdomains,
+        difficultyCounts: finalDifficulties
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+        JSON.stringify(downloadData, null, 2)
+      );
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "contcheck.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
     addLog(`[SUB] Q${currentQuestionIndex + 1} (${currentQuestion.subdomain}) answered in ${questionTimeSpent}s.`);
 
     if (sessionId) {
-      const result = await submitAnswerToBackend(currentQuestion.id, answer, questionTimeSpent);
+      const result = await submitAnswerToBackend(sessionId, currentQuestion.id, answer, questionTimeSpent);
       
       if (result && result.isCompleted) {
         setTimerActive(false);
         addLog("[SYS] All questions completed.");
         
-        const data = await fetchResults();
+        const data = await fetchResults(sessionId);
         if (data) setResultsData(data);
         
         addLog("[SYS] Running diagnostic engine matrix...");
@@ -428,15 +443,23 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
       if (result && result.nextQuestion) {
         const nextQ = mapBackendQuestionToFrontend(result.nextQuestion);
         setCurrentQuestion(nextQ);
+        if (nextQ) {
+          setServedQuestionsHistory((prev) => [...prev, nextQ]);
+        }
         setCurrentQuestionIndex((prev) => prev + 1);
         setQuestionTimeSpent(0);
+        if (result.cognitiveDifficultyState) {
+          addLog(`[ENG] Difficulty State: ${result.cognitiveDifficultyState}`);
+        }
         return;
       }
     }
 
     if (currentQuestionIndex + 1 < DUMMY_QUESTIONS.length) {
       const nextIdx = currentQuestionIndex + 1;
-      setCurrentQuestion(DUMMY_QUESTIONS[nextIdx]);
+      const nextMockQ = DUMMY_QUESTIONS[nextIdx];
+      setCurrentQuestion(nextMockQ);
+      setServedQuestionsHistory((prev) => [...prev, nextMockQ]);
       setCurrentQuestionIndex(nextIdx);
       setQuestionTimeSpent(0);
     } else {
@@ -444,7 +467,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
       addLog("[SYS] All questions completed.");
 
       if (sessionId) {
-        const data = await fetchResults();
+        const data = await fetchResults(sessionId);
         if (data) setResultsData(data);
       }
 
@@ -455,7 +478,8 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
   };
 
   const handleRestart = () => {
-    setProfile({ name: "", grade: "", testMode: "adaptive", apiKey: "" });
+    setProfile({ name: "", grade: "", apiKey: "", difficultyTypes: "", difficultyRatios: "", questionsPerSubdomain: "" });
+    setServedQuestionsHistory([]);
     setSessionId(null);
     setResultsData(null);
     setConsoleLogs([
@@ -510,7 +534,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
               <div className="header-status">
                 <span className="status-badge">{profile.name}</span>
                 <span className="status-badge mode-badge">
-                  {profile.testMode === "adaptive" ? "Adaptive Engine" : "Compact Mode"}
+                  Adaptive Engine
                 </span>
               </div>
             )}
@@ -541,7 +565,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
               handleNextQuestion={handleNextQuestion}
               consoleLogs={consoleLogs}
               consoleEndRef={consoleEndRef}
-              profile={profile}
+              servedQuestionsHistory={servedQuestionsHistory}
             />
           )}
 

@@ -1,0 +1,42 @@
+{
+  "subdomainCounts": {
+    "Realistic": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Investigative": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Openness": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Conscientiousness": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Abstract Reasoning": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Logical Deduction": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Stress Tolerance": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Resilience": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Visual Preference": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Kinesthetic Preference": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Artistic": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Social": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Enterprising": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Conventional": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Validity": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Extraversion": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Agreeableness": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Neuroticism": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Numerical": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Logic": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Verbal": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Abstract": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Spatial": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Stress": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Confidence": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Coping": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Visual": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Auditory": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Kinesthetic": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "ReadingWriting": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "Motivation": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "StudyHabits": { "Easy": 0, "Medium": 0, "Hard": 0 },
+    "CareerClarity": { "Easy": 0, "Medium": 0, "Hard": 0 }
+  },
+  "difficultyCounts": {
+    "Easy": 0,
+    "Medium": 0,
+    "Hard": 0
+  }
+}

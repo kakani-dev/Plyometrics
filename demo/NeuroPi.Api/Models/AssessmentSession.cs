@@ -26,8 +26,11 @@ namespace NeuroPi.Api.Models
         public int SavedQuestionsCount { get; set; } = 0;
         public string ProfileCode { get; set; } = string.Empty;
 
-        // Cognitive difficulties stored as comma-separated key-value pairs or JSON
-        public string CognitiveDifficultyState { get; set; } = "Logic:Medium,Numerical:Medium,Verbal:Medium,Abstract:Medium,Spatial:Medium";
+        // Cognitive difficulties stored as comma-separated subdomain:levelIndex pairs
+        public string CognitiveDifficultyState { get; set; } = "Logic:0,Numerical:0,Verbal:0,Abstract:0,Spatial:0";
+        public string DifficultyTypes { get; set; } = "Easy,Medium,Hard";
+        public string DifficultyRatios { get; set; } = "33,34,33";
+        public int QuestionsPerSubdomain { get; set; } = 3;
 
         // Navigation navigation
         public List<StudentResponse> Responses { get; set; } = new();

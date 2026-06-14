@@ -1629,3 +1629,110 @@
     grid-template-columns: 1fr;
   }
 }
+
+.new-exam-wrapper .custom-difficulty-details {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border-glass);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+  transition: all var(--transition-fast);
+}
+
+.new-exam-wrapper .custom-difficulty-details[open] {
+  background: rgba(255, 255, 255, 0.04);
+  border-style: solid;
+  border-color: var(--border-glass-focus);
+}
+
+.new-exam-wrapper .custom-difficulty-summary {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  padding: 0.25rem 0;
+}
+
+.new-exam-wrapper .custom-difficulty-summary:hover {
+  color: var(--color-primary);
+}
+
+.new-exam-wrapper .custom-difficulty-content {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  animation: new-fade-in var(--transition-fast) forwards;
+}
+
+.new-exam-wrapper .debug-panel-details {
+  margin-top: 1.5rem;
+  background: rgba(2, 6, 23, 0.4);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.new-exam-wrapper .debug-panel-summary {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.new-exam-wrapper .debug-panel-summary:hover {
+  color: var(--color-accent);
+}
+
+.new-exam-wrapper .debug-panel-content {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.new-exam-wrapper .debug-section h4 {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border-bottom: 1px dashed var(--border-glass);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.new-exam-wrapper .debug-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.new-exam-wrapper .debug-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.new-exam-wrapper .debug-label {
+  color: var(--color-text-muted);
+}
+
+.new-exam-wrapper .debug-value {
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.new-exam-wrapper .debug-empty {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
