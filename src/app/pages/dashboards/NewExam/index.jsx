@@ -506,6 +506,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
         <MetricDetailModal
           selectedMetric={selectedMetric}
           setSelectedMetric={setSelectedMetric}
+          resultsData={resultsData}
         />
       </div>
     </Page>

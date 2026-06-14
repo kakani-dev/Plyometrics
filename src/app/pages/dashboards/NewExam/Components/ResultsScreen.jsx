@@ -196,7 +196,7 @@ export default function ResultsScreen({
               {filteredMetrics.map((m) => {
                 const band = m.band || m.Band;
                 const name = m.name || m.Name || m.subdomain || m.Subdomain;
-                const score = m.score ?? m.Score ?? m.score_0_100 ?? m.Score_0_100;
+                const score = m.score ?? m.Score ?? m.score_0_100 ?? m.Score_0_100 ?? m.score0100 ?? m.Score0100;
                 const layer = m.layer || m.Layer || m.domain || m.Domain;
                 const bCls = band === "High" ? "band-high" : band === "Moderate" ? "band-moderate" : band === "Low" ? "band-low" : "";
                 return (
