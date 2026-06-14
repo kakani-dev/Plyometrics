@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroPi | AI-Powered Student Development Intelligence Assessment</title>
+    <meta name="description" content="An advanced psychometric assessment and student counseling system for Grades 8 to 12. Implements Computer Adaptive Testing (CAT) and rule-based diagnostic dashboards.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <svg class="brain-logo" viewBox="0 0 24 24" width="32" height="32">
+                    <path fill="currentColor" d="M12,3c-4.97,0-9,4.03-9,9c0,2.12,0.74,4.07,1.97,5.61L4.35,19.4c-0.39,0.39-0.39,1.02,0,1.41c0.39,0.39,1.02,0.39,1.41,0l1.9-1.9C9.07,19.58,10.48,20,12,20c4.97,0,9-4.03,9-9S16.97,3,12,3z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S15.31,18,12,18z"/>
+                    <path fill="currentColor" opacity="0.8" d="M12,8c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4S14.21,8,12,8z M12,14c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,14,12,14z"/>
+                </svg>
+                <div class="brand-text">
+                    <h1>NeuroPi</h1>
+                    <span class="sub-brand">Student Development Intelligence</span>
+                </div>
+            </div>
+            <div class="header-status" id="header-status" style="display: none;">
+                <span class="status-badge" id="status-student-name">Student</span>
+                <span class="status-badge mode-badge" id="status-test-mode">Compact Mode</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- 1. Welcome Screen -->
+        <section id="screen-welcome" class="screen active">
+            <div class="welcome-card glass-panel">
+                <div class="welcome-header">
+                    <h2 class="glowing-text">Psychometric Assessment Portal</h2>
+                    <p class="tagline">Grades 8 to 12 Academic & Career Guidance Engine</p>
+                </div>
+                
+                <div class="welcome-grid">
+                    <div class="setup-section">
+                        <h3>Profile Registration</h3>
+                        <form id="profile-form" onsubmit="return false;">
+                            <div class="form-group">
+                                <label for="student-name">Student Full Name <span class="required">*</span></label>
+                                <input type="text" id="student-name" required placeholder="Enter student's name..." autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="student-grade">Grade / Class <span class="required">*</span></label>
+                                <select id="student-grade" required>
+                                    <option value="" disabled selected>Select Grade...</option>
+                                    <option value="8">Grade 8</option>
+                                    <option value="9">Grade 9</option>
+                                    <option value="10">Grade 10</option>
+                                    <option value="11">Grade 11</option>
+                                    <option value="12">Grade 12</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="test-mode">Assessment Protocol <span class="required">*</span></label>
+                                <select id="test-mode" required>
+                                    <option value="adaptive" selected>AI-Powered Adaptive Assessment (Dynamic Branching)</option>
+                                    <option value="compact">Compact Assessment (84-Question Fixed Baseline)</option>
+                                </select>
+                                <p class="form-hint" id="mode-hint">Adaptive Mode dynamically scales question difficulty and branches domains based on consistency to find the student's exact profile in 40-60% fewer questions.</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="api-key">Google AI Studio API Key <span class="optional">(Optional)</span></label>
+                                <input type="password" id="api-key" placeholder="AI Studio API Key (AI-powered narrative report)..." value="AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA">
+                                <p class="form-hint">Enter your free Gemini key for deep, custom letter synthesis. If blank, the engine uses our high-fidelity 1080 permutation rules locally.</p>
+                            </div>
+                            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                                <button type="submit" id="btn-start-test" class="btn btn-primary btn-glow" style="flex: 2;">Start Assessment</button>
+                                <button type="button" id="btn-mock-test" class="btn btn-secondary" style="flex: 1; border: 1px solid var(--color-primary); color: var(--color-primary);">Demo Report</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h3>Assessment Coverage</h3>
+                        <div class="coverage-list">
+                            <div class="coverage-item">
+                                <div class="icon-circle riasec-color">R</div>
+                                <div>
+                                    <h4>RIASEC Career Interests</h4>
+                                    <p>Realistic, Investigative, Artistic, Social, Enterprising, Conventional interests.</p>
+                                </div>
+                            </div>
+                            <div class="coverage-item">
+                                <div class="icon-circle big5-color">B5</div>
+                                <div>
+                                    <h4>Big Five Personality</h4>
+                                    <p>Behavioral tendencies: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism.</p>
+                                </div>
+                            </div>
+                            <div class="coverage-item">
+                                <div class="icon-circle cog-color">IQ</div>
+                                <div>
+                                    <h4>Cognitive Reasoning</h4>
+                                    <p>Abstract patterns, logical deductions, numerical, verbal, and spatial abilities.</p>
+                                </div>
+                            </div>
+                            <div class="coverage-item">
+                                <div class="icon-circle emotional-color">EQ</div>
+                                <div>
+                                    <h4>Emotional Profile & Resilience</h4>
+                                    <p>Stress tolerance, confidence levels, resilience under pressure, and coping habits.</p>
+                                </div>
+                            </div>
+                            <div class="coverage-item">
+                                <div class="icon-circle learning-color">LS</div>
+                                <div>
+                                    <h4>Learning Styles & Indicators</h4>
+                                    <p>Visual, Auditory, Kinesthetic learning styles, plus study habits and motivation checks.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Test Session Screen -->
+        <section id="screen-test" class="screen">
+            <div class="test-layout">
+                <div class="test-panel-main glass-panel">
+                    <div class="test-header">
+                        <div class="category-indicator">
+                            <span class="active-domain" id="active-domain">RIASEC Interest</span>
+                            <span class="domain-divider">/</span>
+                            <span class="active-subdomain" id="active-subdomain">Realistic</span>
+                        </div>
+                        <div class="progress-stats">
+                            <span id="question-progress-text">Question 1 of 84</span>
+                            <span class="time-elapsed" id="time-elapsed">00s</span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progress-bar-fill" style="width: 1%;"></div>
+                    </div>
+
+                    <div class="question-container">
+                        <div class="question-card" id="question-card">
+                            <p class="question-text" id="question-text">Loading question...</p>
+                        </div>
+                    </div>
+
+                    <!-- Options Area -->
+                    <div class="options-container" id="options-container">
+                        <!-- Options dynamically loaded here -->
+                    </div>
+
+                    <div class="test-footer">
+                        <div class="timing-warning-container">
+                            <div class="timing-warning-bar" id="timing-warning-bar"></div>
+                            <span class="timing-warning-text" id="timing-warning-text">Response Time: Normal</span>
+                        </div>
+                        <button id="btn-next-question" class="btn btn-primary" disabled>Submit & Continue</button>
+                    </div>
+                </div>
+
+                <!-- Side console panel for Adaptive Engine logs -->
+                <div class="test-panel-side glass-panel" id="adaptive-console-panel">
+                    <div class="console-header">
+                        <h3>Adaptive Engine Brain</h3>
+                        <span class="badge badge-pulse" id="adaptive-brain-status">Active</span>
+                    </div>
+                    <div class="console-body" id="console-logs">
+                        <div class="console-log-line system">[SYS] NeuralPi Adaptive Assessment engine initialized.</div>
+                        <div class="console-log-line system">[SYS] Grade model loaded. Waiting for registration...</div>
+                    </div>
+                    <div class="engine-state-stats">
+                        <div class="stat-row">
+                            <span>Active Metrics Evaluated:</span>
+                            <span class="stat-value" id="engine-stat-metrics">0 / 28</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Questions Saved:</span>
+                            <span class="stat-value text-emerald" id="engine-stat-saved">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Validity Status:</span>
+                            <span class="stat-value text-emerald" id="engine-stat-validity">Stable</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Results & Counselor Dashboard Screen -->
+        <section id="screen-results" class="screen">
+            <div class="results-layout">
+                <div class="results-header glass-panel">
+                    <div class="student-profile-summary">
+                        <h2 id="result-student-name">Student Report Card</h2>
+                        <p id="result-student-grade-mode">Grade 10 | AI-Powered Adaptive Mode</p>
+                    </div>
+                    <div class="profile-code-box">
+                        <span class="label">Permutation Code</span>
+                        <span class="code" id="result-profile-code">NP-P0000</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="window.print()">Print Full Report</button>
+                        <button class="btn btn-secondary" id="btn-export-data">Export Raw JSON Data</button>
+                        <button class="btn btn-primary" id="btn-restart">New Assessment</button>
+                    </div>
+                </div>
+
+                <div class="results-tabs">
+                    <button class="tab-btn active" data-tab="tab-dashboard" id="tab-btn-dashboard">Counselor Dashboard</button>
+                    <button class="tab-btn" data-tab="tab-metrics" id="tab-btn-metrics">Diagnostic Metrics (28)</button>
+                    <button class="tab-btn" data-tab="tab-report" id="tab-btn-report">AI Counseling Report</button>
+                </div>
+
+                <!-- Tab content 1: Dashboard -->
+                <div id="tab-dashboard" class="tab-content active">
+                    <div class="dashboard-grid">
+                        
+                        <!-- Left Panel: Composite Gauges -->
+                        <div class="dashboard-card glass-panel col-span-2">
+                            <h3>Key Psychometric Indices</h3>
+                            <div class="gauges-container">
+                                <div class="gauge-item">
+                                    <div class="gauge-ring-container">
+                                        <svg class="gauge-ring" viewBox="0 0 100 100">
+                                            <circle class="gauge-ring-bg" cx="50" cy="50" r="40"></circle>
+                                            <circle class="gauge-ring-progress" id="gauge-career-readiness" cx="50" cy="50" r="40" stroke-dasharray="251" stroke-dashoffset="251"></circle>
+                                        </svg>
+                                        <span class="gauge-value" id="val-career-readiness">0%</span>
+                                    </div>
+                                    <h4>Career Readiness</h4>
+                                    <span class="badge" id="band-career-readiness">Low</span>
+                                </div>
+
+                                <div class="gauge-item">
+                                    <div class="gauge-ring-container">
+                                        <svg class="gauge-ring" viewBox="0 0 100 100">
+                                            <circle class="gauge-ring-bg" cx="50" cy="50" r="40"></circle>
+                                            <circle class="gauge-ring-progress" id="gauge-riasec-clarity" cx="50" cy="50" r="40" stroke-dasharray="251" stroke-dashoffset="251"></circle>
+                                        </svg>
+                                        <span class="gauge-value" id="val-riasec-clarity">0%</span>
+                                    </div>
+                                    <h4>RIASEC Clarity</h4>
+                                    <span class="badge" id="band-riasec-clarity">Low</span>
+                                </div>
+
+                                <div class="gauge-item">
+                                    <div class="gauge-ring-container">
+                                        <svg class="gauge-ring" viewBox="0 0 100 100">
+                                            <circle class="gauge-ring-bg" cx="50" cy="50" r="40"></circle>
+                                            <circle class="gauge-ring-progress" id="gauge-cog-index" cx="50" cy="50" r="40" stroke-dasharray="251" stroke-dashoffset="251"></circle>
+                                        </svg>
+                                        <span class="gauge-value" id="val-cog-index">0%</span>
+                                    </div>
+                                    <h4>Cognitive Index</h4>
+                                    <span class="badge" id="band-cog-index">Low</span>
+                                </div>
+
+                                <div class="gauge-item">
+                                    <div class="gauge-ring-container">
+                                        <svg class="gauge-ring" viewBox="0 0 100 100">
+                                            <circle class="gauge-ring-bg" cx="50" cy="50" r="40"></circle>
+                                            <circle class="gauge-ring-progress" id="gauge-emo-sustainability" cx="50" cy="50" r="40" stroke-dasharray="251" stroke-dashoffset="251"></circle>
+                                        </svg>
+                                        <span class="gauge-value" id="val-emo-sustainability">0%</span>
+                                    </div>
+                                    <h4>Emotional Sustainability</h4>
+                                    <span class="badge" id="band-emo-sustainability">Low</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Core Findings -->
+                        <div class="dashboard-card glass-panel">
+                            <h3>Dominant Profile Vectors</h3>
+                            <div class="findings-list">
+                                <div class="finding-item">
+                                    <span class="finding-label">Dominant RIASEC Group</span>
+                                    <span class="finding-val" id="finding-riasec">Realistic</span>
+                                </div>
+                                <div class="finding-item">
+                                    <span class="finding-label">Dominant Big Five Trait</span>
+                                    <span class="finding-val" id="finding-big5">Openness</span>
+                                </div>
+                                <div class="finding-item">
+                                    <span class="finding-label">Learning Preference</span>
+                                    <span class="finding-val" id="finding-learning">Visual</span>
+                                </div>
+                                <div class="finding-item">
+                                    <span class="finding-label">Big Five Behavioral Balance</span>
+                                    <span class="finding-val" id="finding-b5-balance">0%</span>
+                                </div>
+                                <div class="finding-item">
+                                    <span class="finding-label">Learning Preference Strength</span>
+                                    <span class="finding-val" id="finding-learn-fit">0%</span>
+                                </div>
+                                <div class="finding-item" style="border-top: 1px solid rgba(6, 182, 212, 0.2); padding-top: 0.75rem; margin-top: 0.5rem;">
+                                    <span class="finding-label" style="color: var(--color-primary); font-weight: 600;">Recommended Stream</span>
+                                    <span class="finding-val text-emerald" id="finding-stream" style="font-weight: 700;">Science (PCM)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Full Width Alerts and Counselor Recommendations -->
+                        <div class="dashboard-card glass-panel col-span-3">
+                            <div class="alert-action-section">
+                                <div class="alert-box alert-warning" id="alert-card-box">
+                                    <div class="alert-header">
+                                        <svg viewBox="0 0 24 24" width="24" height="24">
+                                            <path fill="currentColor" d="M12,2L1,21h22L12,2z M12,18c-0.55,0-1-0.45-1-1s0.45-1,1-1s1,0.45,1,1S12.55,18,12,18z M12,14c-0.55,0-1-0.45-1-1V9c0-0.55,0.45-1,1-1s1,0.45,1,1v4C12.97,13.55,12.55,14,12,14z"/>
+                                        </svg>
+                                        <h4 id="result-primary-alert">Primary Alert: No major alert</h4>
+                                    </div>
+                                    <p id="result-alert-description">Validity check passed. Assessment profile registers balanced developmental trends.</p>
+                                </div>
+                                <div class="recommendations-box">
+                                    <h4>Counselor Action Roadmap</h4>
+                                    <p class="focus-title" id="result-counselor-focus">Counselor Focus: Strengths confirmation and growth plan</p>
+                                    <p class="focus-text" id="result-permutation-action">Loading recommended action roadmap based on permutation rules...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab content 2: Diagnostic Metrics -->
+                <div id="tab-metrics" class="tab-content">
+                    <div class="metrics-summary-controls">
+                        <div class="filter-group">
+                            <button class="filter-btn active" data-filter="all">All Layers</button>
+                            <button class="filter-btn" data-filter="RIASEC Interest">RIASEC</button>
+                            <button class="filter-btn" data-filter="Big Five Personality">Big Five</button>
+                            <button class="filter-btn" data-filter="Cognitive Ability">Cognitive</button>
+                            <button class="filter-btn" data-filter="Emotional Profile">Emotional</button>
+                            <button class="filter-btn" data-filter="Learning Style">Learning Styles</button>
+                            <button class="filter-btn" data-filter="Additional NeuroPi Indicators">Indicators</button>
+                        </div>
+                        <div class="metrics-legend">
+                            <span class="legend-item"><span class="legend-dot band-high"></span>High (&ge;70%)</span>
+                            <span class="legend-item"><span class="legend-dot band-moderate"></span>Moderate (40-69%)</span>
+                            <span class="legend-item"><span class="legend-dot band-low"></span>Low (&le;39%)</span>
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid" id="metrics-grid">
+                        <!-- Dynamically filled with 28 metric cards -->
+                    </div>
+                </div>
+
+                <!-- Tab content 3: AI Counseling Report -->
+                <div id="tab-report" class="tab-content">
+                    <div class="report-container glass-panel">
+                        <div class="report-controls">
+                            <div class="api-key-status-indicator">
+                                <span class="indicator-dot" id="report-api-status-dot"></span>
+                                <span class="indicator-text" id="report-api-status-text">Gemini Live Link: Disabled (Local Rules Matched)</span>
+                            </div>
+                            <div class="report-actions">
+                                <button class="btn btn-secondary" onclick="window.print()">Print PDF</button>
+                                <button class="btn btn-primary" id="btn-generate-ai-report" style="display: none;">Generate Advanced AI Synthesis</button>
+                            </div>
+                        </div>
+
+                        <div class="report-content" id="report-printable-area">
+                            <div class="report-watermark">NEUROPI REPORT</div>
+                            <div class="report-doc-header">
+                                <div class="report-doc-title">
+                                    <h2>Student Development Intelligence Report</h2>
+                                    <p class="subtitle">NeuroPi Psychological and Cognitive Diagnostic Profiling</p>
+                                </div>
+                                <div class="report-doc-meta">
+                                    <div class="meta-row"><strong>Student Name:</strong> <span id="rep-student-name">Harsh</span></div>
+                                    <div class="meta-row"><strong>Grade:</strong> <span id="rep-student-grade">Grade 10</span></div>
+                                    <div class="meta-row"><strong>Assessment Date:</strong> <span id="rep-date">June 11, 2026</span></div>
+                                    <div class="meta-row"><strong>Permutation Code:</strong> <span id="rep-profile-code">NP-P0001</span></div>
+                                </div>
+                            </div>
+
+                            <hr class="report-divider">
+
+                            <div class="report-section">
+                                <h3>I. Executive Assessment Summary</h3>
+                                <p id="rep-exe-summary">Loading executive summary...</p>
+                            </div>
+
+                            <div class="report-section">
+                                <h3>II. Cognitive Reasoning & Sensory Learning Profile</h3>
+                                <div class="report-subgrid">
+                                    <div class="subgrid-card">
+                                        <h4>Cognitive Strengths</h4>
+                                        <p id="rep-cog-strengths">Loading cognitive performance details...</p>
+                                    </div>
+                                    <div class="subgrid-card">
+                                        <h4>Pedagogical & Learning Strategy</h4>
+                                        <p id="rep-learning-strategy">Loading learning strategy details...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="report-section">
+                                <h3>III. Academic and Career Trajectory Mapping</h3>
+                                <div class="formula-box">
+                                    <span class="formula-title">Weighted Career Fit Calculation</span>
+                                    <span class="formula-description">Career Fit = (RIASEC Interest × 0.35) + (Cognitive Capacity × 0.25) + (Big Five Adaptation × 0.20) + (Emotional Stamina × 0.20)</span>
+                                    <div class="formula-values" id="rep-career-fit-calculation">
+                                        Calculated Career Fit Index: <strong class="text-emerald" id="rep-career-fit-val">0%</strong>
+                                    </div>
+                                </div>
+                                <p id="rep-career-mapping">Loading career trajectory recommendations...</p>
+                                <div class="stream-recommendation-box" style="margin-top: 1.5rem; margin-bottom: 1.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 1.25rem;">
+                                    <h4 style="font-family: var(--font-heading); color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.05rem;">Recommended Academic Stream</h4>
+                                    <p style="font-size: 1.25rem; font-weight: 800; color: var(--color-high); margin-bottom: 0.25rem;" id="rep-stream-title">Science (PCM)</p>
+                                    <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 0.75rem;"><strong>Core Subjects:</strong> <span id="rep-stream-subjects">Physics, Chemistry, Mathematics</span></p>
+                                    <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.75rem;">
+                                        <strong style="font-size: 0.85rem; color: var(--color-text); display: block; margin-bottom: 0.4rem;">Action Plan to Achieve Success in This Stream:</strong>
+                                        <ul id="rep-stream-actions" style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: var(--color-text-muted); display: flex; flex-direction: column; gap: 0.35rem;">
+                                            <!-- Dynamic items -->
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="report-section">
+                                <h3>IV. Guided Counseling & Parental Support Recommendations</h3>
+                                <p id="rep-counselor-guideline">Loading guidelines...</p>
+                                <div class="action-points-box">
+                                    <h4>Action Roadmap & Support Priorities:</h4>
+                                    <ul class="action-list" id="rep-action-list">
+                                        <li>Priority 1: Build foundational academic skills.</li>
+                                        <li>Priority 2: Provide emotional support and reduce assessment pressure.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="report-doc-footer">
+                                <div class="signature-line">
+                                    <div class="signature-space"></div>
+                                    <p>NeuroPi Counseling Systems Director</p>
+                                </div>
+                                <div class="signature-line">
+                                    <div class="signature-space"></div>
+                                    <p>Lead Educational Psychologist</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="metric-modal">
+        <div class="modal-card glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-metric-name">Metric Details</h3>
+                <button class="btn-close" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-meta-grid">
+                    <div class="meta-item">
+                        <span class="label">Layer</span>
+                        <span class="value" id="modal-layer">RIASEC Interest</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">Normalized Score</span>
+                        <span class="value font-bold" id="modal-score">85%</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">Band</span>
+                        <span class="value badge" id="modal-band">High</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">AI Status Flag</span>
+                        <span class="value badge" id="modal-flag">OK</span>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h4>Counselor Metric Interpretation</h4>
+                    <p class="description" id="modal-interpretation">Detail interpretation text here.</p>
+                </div>
+
+                <div class="modal-section">
+                    <h4>Answer Session Audit</h4>
+                    <div class="table-container">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>QID</th>
+                                    <th>Question Item</th>
+                                    <th>Response</th>
+                                    <th>Score</th>
+                                    <th>Time Spent</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-audit-rows">
+                                <!-- Filled dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Databases -->
+    <script src="questions.js"></script>
+    <script src="rules.js"></script>
+    <!-- Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

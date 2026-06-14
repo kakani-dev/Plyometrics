@@ -14,6 +14,17 @@ export default defineConfig({
   eslint(), tailwindcss(),
   ],
   server: {
+    watch: {
+      ignored: [
+        '**/demo/**',
+        '**/server/**',
+        '**/*.db',
+        '**/*.db-shm',
+        '**/*.db-wal',
+        '**/bin/**',
+        '**/obj/**'
+      ]
+    },
     proxy: {
       '/api': {
         target: 'https://localhost:7058',

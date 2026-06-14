@@ -22,13 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Visual Studio & .NET Build Folders
-.vs/
-[Bb]in/
-[Oo]bj/
-*.user
-*.db-shm
-*.db-wal
-neuropi.db-shm
-neuropi.db-wal
