@@ -85,6 +85,30 @@ using (var scope = app.Services.CreateScope())
                 }
             }
         }
+        // Ensure Reports table exists (for databases created before this entity was added)
+        using (var reportCmd = context.Database.GetDbConnection().CreateCommand())
+        {
+            reportCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Reports'";
+            var reportTable = reportCmd.ExecuteScalar();
+            if (reportTable == null || reportTable == DBNull.Value)
+            {
+                var createCmd = context.Database.GetDbConnection().CreateCommand();
+                createCmd.CommandText = @"
+                    CREATE TABLE ""Reports"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_Reports"" PRIMARY KEY AUTOINCREMENT,
+                        ""SessionId"" TEXT NOT NULL,
+                        ""ReportText"" TEXT NOT NULL,
+                        ""Source"" TEXT NOT NULL,
+                        ""IsAiGenerated"" INTEGER NOT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_Reports_Sessions_SessionId"" FOREIGN KEY (""SessionId"") REFERENCES ""Sessions""(""Id"") ON DELETE CASCADE
+                    );
+                    CREATE INDEX ""IX_Reports_SessionId"" ON ""Reports"" (""SessionId"");
+                ";
+                createCmd.ExecuteNonQuery();
+                Console.WriteLine("Created missing table: Reports");
+            }
+        }
         context.Database.CloseConnection();
         
         var assessmentService = services.GetRequiredService<IAssessmentService>();

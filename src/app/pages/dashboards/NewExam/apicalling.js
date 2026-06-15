@@ -75,6 +75,18 @@ export async function fetchResults(sessionId) {
   }
 }
 
+export async function fetchSavedReport(sessionId) {
+  if (!sessionId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/assessment/report/${sessionId}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.reportText || data.ReportText || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateAiReportBackend(sessionId, apiKey) {
   try {
     const res = await fetch(`${API_BASE}/assessment/ai-report`, {

@@ -10,6 +10,7 @@ import {
   startBackendSession,
   submitAnswerToBackend,
   fetchResults,
+  fetchSavedReport,
   generateAiReportBackend,
   generateAiReportDirect,
 } from "../apicalling";
@@ -354,10 +355,22 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
         addLog("[SYS] All questions completed.");
 
         const data = await fetchResults(sessionId);
-        if (data) setResultsData(data);
+        if (data) {
+          const reportText = await fetchSavedReport(sessionId);
+          if (reportText) {
+            data.localNarrative = {
+              executiveSummary: "",
+              cognitiveStrengths: "",
+              learningStrategy: "",
+              careerMapping: "",
+              counselorGuideline: reportText,
+            };
+            addLog("[SYS] AI report loaded.");
+          }
+          setResultsData(data);
+        }
 
         addLog("[SYS] Running diagnostic engine matrix...");
-        addLog("[SYS] Report generated.");
         setCurrentScreen("results");
         return;
       }

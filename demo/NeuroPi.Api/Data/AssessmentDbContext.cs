@@ -13,6 +13,7 @@ namespace NeuroPi.Api.Data
         public DbSet<AssessmentSession> Sessions => Set<AssessmentSession>();
         public DbSet<StudentResponse> Responses => Set<StudentResponse>();
         public DbSet<Question> Questions => Set<Question>();
+        public DbSet<AssessmentReport> Reports => Set<AssessmentReport>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,6 +36,16 @@ namespace NeuroPi.Api.Data
             // Response config
             modelBuilder.Entity<StudentResponse>()
                 .HasKey(r => r.Id);
+
+            // Report config
+            modelBuilder.Entity<AssessmentReport>()
+                .HasKey(r => r.Id);
+
+            modelBuilder.Entity<AssessmentReport>()
+                .HasOne(r => r.Session)
+                .WithMany()
+                .HasForeignKey(r => r.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

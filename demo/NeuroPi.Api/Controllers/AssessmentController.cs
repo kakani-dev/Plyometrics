@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using NeuroPi.Api.Data;
 using NeuroPi.Api.Models;
 using NeuroPi.Api.Services;
 using System;
@@ -13,11 +15,13 @@ namespace NeuroPi.Api.Controllers
     {
         private readonly IAssessmentService _assessmentService;
         private readonly IGeminiService _geminiService;
+        private readonly AssessmentDbContext _context;
 
-        public AssessmentController(IAssessmentService assessmentService, IGeminiService geminiService)
+        public AssessmentController(IAssessmentService assessmentService, IGeminiService geminiService, AssessmentDbContext context)
         {
             _assessmentService = assessmentService;
             _geminiService = geminiService;
+            _context = context;
         }
 
         [HttpPost("start")]
@@ -65,11 +69,54 @@ namespace NeuroPi.Api.Controllers
                     request.SessionId, request.QID, request.ResponseValue, request.TimeSec);
 
                 var session = await _assessmentService.GetSessionAsync(request.SessionId);
+                var isCompleted = nextQ == null;
+
+                if (isCompleted)
+                {
+                    var existingReport = await _context.Reports
+                        .FirstOrDefaultAsync(r => r.SessionId == request.SessionId);
+
+                    if (existingReport == null || !existingReport.IsAiGenerated)
+                    {
+                        var results = await _assessmentService.CompileResultsAsync(request.SessionId);
+                        var response = await _geminiService.GenerateCounselingReportAsync(results, session?.ApiKey ?? string.Empty);
+
+                        if (response.IsAiGenerated)
+                        {
+                            if (existingReport != null)
+                                _context.Reports.Remove(existingReport);
+
+                            var report = new AssessmentReport
+                            {
+                                SessionId = request.SessionId,
+                                ReportText = response.ReportText,
+                                Source = response.Source,
+                                IsAiGenerated = response.IsAiGenerated,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            _context.Reports.Add(report);
+                            await _context.SaveChangesAsync();
+                        }
+                        else if (existingReport == null)
+                        {
+                            var report = new AssessmentReport
+                            {
+                                SessionId = request.SessionId,
+                                ReportText = response.ReportText,
+                                Source = response.Source,
+                                IsAiGenerated = response.IsAiGenerated,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            _context.Reports.Add(report);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
 
                 return Ok(new
                 {
                     nextQuestion = nextQ,
-                    isCompleted = nextQ == null,
+                    isCompleted = isCompleted,
                     cognitiveDifficultyState = session?.CognitiveDifficultyState
                 });
             }
@@ -99,18 +146,45 @@ namespace NeuroPi.Api.Controllers
             }
         }
 
-        [HttpPost("ai-report")]
-        public async Task<IActionResult> GenerateAiReport([FromBody] AiReportRequest request)
+        [HttpGet("report/{sessionId}")]
+        public async Task<IActionResult> GetReport(Guid sessionId)
         {
             try
             {
-                var results = await _assessmentService.CompileResultsAsync(request.SessionId);
-                var response = await _geminiService.GenerateCounselingReportAsync(results, request.ApiKey);
-                return Ok(response);
+                var report = await _context.Reports
+                    .FirstOrDefaultAsync(r => r.SessionId == sessionId);
+                if (report == null)
+                    return NotFound("No report found for this session.");
+
+                return Ok(new GeminiReportResponse
+                {
+                    ReportText = report.ReportText,
+                    Source = report.Source,
+                    IsAiGenerated = report.IsAiGenerated
+                });
             }
-            catch (KeyNotFoundException)
+            catch (Exception ex)
             {
-                return NotFound($"Session {request.SessionId} not found.");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpPost("ai-report")]
+        public async Task<IActionResult> GetSavedReport([FromBody] AiReportRequest request)
+        {
+            try
+            {
+                var report = await _context.Reports
+                    .FirstOrDefaultAsync(r => r.SessionId == request.SessionId);
+                if (report == null)
+                    return NotFound("No report found. Complete the assessment first.");
+
+                return Ok(new GeminiReportResponse
+                {
+                    ReportText = report.ReportText,
+                    Source = report.Source,
+                    IsAiGenerated = report.IsAiGenerated
+                });
             }
             catch (Exception ex)
             {
