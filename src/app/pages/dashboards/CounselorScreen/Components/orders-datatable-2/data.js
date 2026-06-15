@@ -1,3 +1,23 @@
+import axios from 'axios';
+
+const REPORT_API_BASE = "https://localhost:7172";
+
+export async function generateReport(sessionId, apiKey) {
+  if (!sessionId) return null;
+  try {
+    const { data } = await axios.post(`${REPORT_API_BASE}/api/Assessment/ai-report`, {
+      sessionId,
+      apiKey: apiKey || "AQ.Ab8RN6IeyWn7Oovu1RtckQ70ibSHHZgQcJp9puq6Lda4c_Tl8w",
+    }, {
+      headers: { "accept": "*/*" },
+    });
+    return data.reportText || data.ReportText || data;
+  } catch (err) {
+    console.error("[generateReport] API error:", err?.response?.data || err);
+    return null;
+  }
+}
+
 export const candidatesList = [
     {
         id: 1,

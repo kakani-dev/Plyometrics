@@ -1538,37 +1538,39 @@ Section III: Academic and Career Trajectory Mapping (Provide concrete career rec
 Section IV: Guided Counseling & Parental Support Recommendations (List step-by-step counselor focus roadmaps and parental support guidelines).
         `;
         
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.student.apiKey}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: promptText
-                                }
-                            ]
-                        }
-                    ]
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (response.ok && result.candidates && result.candidates[0].content.parts[0].text) {
-                const aiText = result.candidates[0].content.parts[0].text;
-                parseAndRenderAiReport(aiText);
-                logToConsole("[SYS] AI report synthesized successfully.", "success");
-            } else {
-                throw new Error(result.error?.message || "Invalid API response structure.");
+        const geminiModels = ["gemini-1.5-flash", "gemini-3.5-flash", "gemini-3.1-pro-preview"];
+        let aiText = null;
+
+        for (const model of geminiModels) {
+            try {
+                logToConsole(`[SYS] Trying model: ${model}`, "info");
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${state.student.apiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    aiText = result.candidates[0].content.parts[0].text;
+                    logToConsole(`[SYS] AI report synthesized using ${model}.`, "success");
+                    break;
+                }
+
+                logToConsole(`[SYS-ERR] ${model} failed: ${result.error?.message || "Invalid response"}`, "alert");
+            } catch (err) {
+                logToConsole(`[SYS-ERR] ${model} error: ${err.message}`, "alert");
             }
-            
+        }
+
+        try {
+            if (aiText) {
+                parseAndRenderAiReport(aiText);
+            } else {
+                throw new Error("All Gemini models failed.");
+            }
         } catch (error) {
-            console.error("AI report synthesis error:", error);
             logToConsole(`[SYS-ERR] API call failed: ${error.message}. Displaying local rule interpretations.`, "alert");
             alert(`Gemini API Error: ${error.message}. The system has reverted to high-fidelity offline matrices.`);
         } finally {

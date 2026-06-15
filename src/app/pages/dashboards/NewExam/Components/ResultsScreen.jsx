@@ -1,5 +1,56 @@
 
 
+
+function parseBoldText(text) {
+  const parts = text.split(/\*\*([^*]+)\*\*/g);
+  return parts.map((part, i) => i % 2 === 1 ? <strong key={i} style={{ fontWeight: 700 }} className="font-semibold">{part}</strong> : part);
+}
+
+function renderFormattedText(text) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const rendered = [];
+  let listItems = [];
+  
+  const flushList = (key) => {
+    if (listItems.length > 0) {
+      rendered.push(
+        <ul key={key} style={{ listStyleType: "disc", paddingLeft: "1.5rem", marginTop: "0.25rem", marginBottom: "0.75rem", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  lines.forEach((line, idx) => {
+    let trimmed = line.trim();
+    if (!trimmed) {
+      flushList(`list-flush-${idx}`);
+      return;
+    }
+    if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+      let content = trimmed.substring(1).trim();
+      listItems.push(
+        <li key={`li-${idx}`} style={{ fontSize: "0.9rem", color: "#334155", lineHeight: "1.5" }}>
+          {parseBoldText(content)}
+        </li>
+      );
+    } else {
+      flushList(`list-flush-${idx}`);
+      if (trimmed.startsWith('###')) {
+        rendered.push(<h5 key={idx} style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", marginTop: "1rem", marginBottom: "0.5rem" }}>{parseBoldText(trimmed.replace(/^###\s*/, ''))}</h5>);
+      } else if (trimmed.startsWith('##')) {
+        rendered.push(<h4 key={idx} style={{ fontWeight: 700, fontSize: "1.05rem", color: "#0f172a", marginTop: "1.25rem", marginBottom: "0.5rem" }}>{parseBoldText(trimmed.replace(/^##\s*/, ''))}</h4>);
+      } else {
+        rendered.push(<p key={idx} style={{ marginBottom: "0.75rem", fontSize: "0.95rem", color: "#334155", lineHeight: "1.6", textAlign: "justify" }}>{parseBoldText(trimmed)}</p>);
+      }
+    }
+  });
+  flushList(`list-flush-end`);
+  return rendered;
+}
+
 const FILTER_BTNS = [
   { label: "All Layers", value: "all" },
   { label: "RIASEC", value: "RIASEC Interest" },
@@ -260,7 +311,7 @@ export default function ResultsScreen({
               
               <div className="report-section">
                 <h3>I. Executive Assessment Summary</h3>
-                <p>{exeSummary}</p>
+                {renderFormattedText(exeSummary)}
               </div>
 
               <div className="report-section">
@@ -268,11 +319,11 @@ export default function ResultsScreen({
                 <div className="report-subgrid">
                   <div className="subgrid-card">
                     <h4>Cognitive Strengths</h4>
-                    <p>{cognitiveStrengths}</p>
+                    {renderFormattedText(cognitiveStrengths)}
                   </div>
                   <div className="subgrid-card">
                     <h4>Learning Strategy</h4>
-                    <p>{learningStrategy}</p>
+                    {renderFormattedText(learningStrategy)}
                   </div>
                 </div>
               </div>
@@ -284,7 +335,7 @@ export default function ResultsScreen({
                   <span className="formula-description">Career Fit = (RIASEC × 0.35) + (Cognitive × 0.25) + (Big Five × 0.20) + (Emotional × 0.20)</span>
                   <div className="formula-values">Career Fit Index: <strong className="text-high">{careerFitScore}%</strong></div>
                 </div>
-                <p>{careerMapping}</p>
+                {renderFormattedText(careerMapping)}
                 <div className="stream-box">
                   <h4>Recommended Academic Stream</h4>
                   <p className="stream-title">{recommendedStream}</p>
@@ -310,7 +361,7 @@ export default function ResultsScreen({
 
               <div className="report-section">
                 <h3>IV. Counseling Recommendations</h3>
-                <p>{counselorGuideline}</p>
+                {renderFormattedText(counselorGuideline)}
                 <div className="action-points-box">
                   <h4>Action Roadmap:</h4>
                   <ul className="action-list">

@@ -90,23 +90,45 @@ export async function generateAiReportBackend(sessionId, apiKey) {
   }
 }
 
-export async function generateAiReportDirect(apiKey, promptText) {
-  try {
-    const requestBody = {
-      contents: [{ parts: [{ text: promptText }] }]
-    };
-    console.log("[generateAiReportDirect] Sending request:", JSON.stringify(requestBody, null, 2));
+const GEMINI_MODELS = [
+  "gemini-1.5-flash",
+  "gemini-3.5-flash",
+  "gemini-3.1-pro-preview"
+];
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+async function callGeminiModel(apiKey, promptText, model) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody)
-    });
-    if (!response.ok) throw new Error("Direct Gemini API call failed");
-    const result = await response.json();
-    console.log("[generateAiReportDirect] Received response:", JSON.stringify(result, null, 2));
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  } catch {
-    return null;
+      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+    }
+  );
+  if (!response.ok) throw new Error(`${model} failed (${response.status})`);
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error(`${model} returned empty response`);
+  return text;
+}
+
+export async function generateAiReportDirect(apiKey, promptText) {
+  const requestBody = { contents: [{ parts: [{ text: promptText }] }] };
+  console.log("[generateAiReportDirect] Sending request:", JSON.stringify(requestBody, null, 2));
+
+  let lastError;
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`[generateAiReportDirect] Trying model: ${model}`);
+      const text = await callGeminiModel(apiKey, promptText, model);
+      console.log(`[generateAiReportDirect] ${model} succeeded`);
+      return text;
+    } catch (err) {
+      console.warn(`[generateAiReportDirect] ${model} failed: ${err.message}`);
+      lastError = err;
+    }
   }
+
+  console.error("[generateAiReportDirect] All models failed:", lastError?.message);
+  return null;
 }

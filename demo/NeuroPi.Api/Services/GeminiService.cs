@@ -79,15 +79,15 @@ namespace NeuroPi.Api.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var errText = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[SYS] Gemini 3.1 Pro failed (Status: {response.StatusCode}). Retrying with gemini-2.0-flash fallback...");
+                    Console.WriteLine($"[SYS] Gemini 3.1 Pro failed (Status: {response.StatusCode}). Retrying with gemini-3.5-flash fallback...");
                     
-                    var fallbackUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}";
+                    var fallbackUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={apiKey}";
                     var fallbackResponse = await client.PostAsync(fallbackUrl, content);
                     
                     if (!fallbackResponse.IsSuccessStatusCode)
                     {
                         var fallbackErrText = await fallbackResponse.Content.ReadAsStringAsync();
-                        Console.WriteLine($"[SYS] Both Gemini 3.1 Pro and Gemini 2.0 Flash failed due to quota/network constraints. Generating high-fidelity offline report...");
+                        Console.WriteLine($"[SYS] Both Gemini 3.1 Pro and Gemini 3.5 Flash failed due to quota/network constraints. Generating high-fidelity offline report...");
                         return new GeminiReportResponse
                         {
                             ReportText = GenerateOfflineNarrative(results),
