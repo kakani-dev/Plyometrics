@@ -6,7 +6,7 @@ try:
         "studentName": "Diagnostic Student",
         "grade": "10",
         "mode": "adaptive",
-        "apiKey": ""
+        "apiKey": "AQ.Ab8RN6LolHIXVQN39HMee0YVRrVojXZ68O8dSJXCbYjuR4AtAA"
     })
     print("STATUS:", r.status_code)
     print("JSON:", json.dumps(r.json(), indent=2))

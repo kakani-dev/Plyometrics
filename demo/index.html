@@ -70,7 +70,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="api-key">Google AI Studio API Key <span class="optional">(Optional)</span></label>
-                                <input type="password" id="api-key" placeholder="AI Studio API Key (AI-powered narrative report)..." value="AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA">
+                                <input type="password" id="api-key" placeholder="AI Studio API Key (AI-powered narrative report)...">
                                 <p class="form-hint">Enter your free Gemini key for deep, custom letter synthesis. If blank, the engine uses our high-fidelity 1080 permutation rules locally.</p>
                             </div>
                             <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
@@ -510,6 +510,8 @@
         </div>
     </div>
 
+    <!-- API Key Config (single source of truth) -->
+    <script src="api-key.js"></script>
     <!-- Core Databases -->
     <script src="questions.js"></script>
     <script src="rules.js"></script>

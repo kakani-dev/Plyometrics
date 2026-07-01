@@ -150,6 +150,8 @@ export function SubRowComponent({ row, cardWidth, table }) {
     error: "",
     testName: "",
     sessionId: "",
+    isAiGenerated: true,
+    source: "",
   });
 
   const handleGenerateReport = async (test) => {
@@ -158,6 +160,23 @@ export function SubRowComponent({ row, cardWidth, table }) {
       toast.error("No session ID available for this test");
       return;
     }
+
+    // ── If we already have a cached report in the table row, show it instantly ──
+    if (test.testType?.reportText) {
+      setReportState({
+        isOpen: true,
+        loading: false,
+        text: test.testType.reportText,
+        error: "",
+        testName: test.testType.name,
+        sessionId,
+        isAiGenerated: test.testType.isAiGenerated === true,
+        source: test.testType.reportSource || "",
+      });
+      return;
+    }
+
+    // ── First time: fetch from API ────────────────────────────────────────────
     setReportState({
       isOpen: true,
       loading: true,
@@ -165,13 +184,42 @@ export function SubRowComponent({ row, cardWidth, table }) {
       error: "",
       testName: test.testType.name,
       sessionId,
+      isAiGenerated: true,
+      source: "",
     });
-    const report = await generateReport(sessionId);
-    if (report) {
+
+    const result = await generateReport(sessionId, undefined, row.original.name);
+    console.log("[SubRowComponent] generateReport result:", result);
+
+    if (result) {
+      const reportText    = typeof result === "string" ? result : result.reportText;
+      const isAiGenerated = result.isAiGenerated === true;
+      const source        = result.source || "";
+      console.log(`[SubRowComponent] isAiGenerated=${isAiGenerated}, source="${source}"`);
+
+      // ── Write back into the table row so reopening is instant ──────────────
+      const originalTests = row.original.tests;
+      const testIndex     = originalTests.findIndex((t) => t.id === test.id);
+      if (testIndex !== -1) {
+        const updatedTests = [...originalTests];
+        updatedTests[testIndex] = {
+          ...updatedTests[testIndex],
+          testType: {
+            ...updatedTests[testIndex].testType,
+            reportText,
+            isAiGenerated,
+            reportSource: source,
+          },
+        };
+        table?.options.meta?.updateData(row.index, "tests", updatedTests);
+      }
+
       setReportState((prev) => ({
         ...prev,
         loading: false,
-        text: typeof report === "string" ? report : JSON.stringify(report, null, 2),
+        text: reportText,
+        isAiGenerated,
+        source,
       }));
     } else {
       setReportState((prev) => ({ ...prev, loading: false, error: "Failed to generate AI report" }));
@@ -179,7 +227,7 @@ export function SubRowComponent({ row, cardWidth, table }) {
   };
 
   const closeReport = () => {
-    setReportState({ isOpen: false, loading: false, text: "", error: "", testName: "", sessionId: "" });
+    setReportState({ isOpen: false, loading: false, text: "", error: "", testName: "", sessionId: "", isAiGenerated: true, source: "" });
   };
 
   const printRef = useRef();
@@ -502,16 +550,32 @@ export function SubRowComponent({ row, cardWidth, table }) {
               )}
               {reportState.text && (
                 <>
-                  <div className="mb-4 flex justify-end">
-                    <Button onClick={handlePrint} variant="outlined" className="inline-flex items-center gap-2 text-xs-plus">
-                      <ArrowDownTrayIcon className="size-4.5" />
-                      <span>Download PDF</span>
-                    </Button>
+                  <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+                    {!reportState.isAiGenerated && (
+                      <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ fill: 'none' }}>
+                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="none"/>
+                          <line x1="12" y1="9" x2="12" y2="13"/>
+                          <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>
+                          <strong>Offline report</strong> — AI generation failed (API key quota exceeded).
+                          {reportState.source && <span className="ml-1 opacity-75">Source: {reportState.source}</span>}
+                        </span>
+                      </div>
+                    )}
+                    <div className="ml-auto">
+                      <Button onClick={handlePrint} variant="outlined" className="inline-flex items-center gap-2 text-xs-plus">
+                        <ArrowDownTrayIcon className="size-4.5" />
+                        <span>Download PDF</span>
+                      </Button>
+                    </div>
                   </div>
                   <div ref={printRef} className="new-exam-wrapper counselor-report-only" style={{ minHeight: "auto", background: "transparent", backgroundImage: "none" }}>
                     <style>{`
                       .counselor-report-only .results-header,
-                      .counselor-report-only .results-tabs {
+                      .counselor-report-only .results-tabs,
+                      .counselor-report-only .report-controls {
                         display: none !important;
                       }
                       .counselor-report-only .report-container {
@@ -519,6 +583,54 @@ export function SubRowComponent({ row, cardWidth, table }) {
                         box-shadow: none !important;
                         background: transparent !important;
                         padding: 0 !important;
+                      }
+                      /* Section II – keep cards top-aligned so short content doesn't stretch */
+                      .counselor-report-only .report-subgrid {
+                        align-items: start !important;
+                      }
+                      /* Section III – stream recommendation card */
+                      .counselor-report-only .stream-box {
+                        background: #f0f9ff;
+                        border: 1px solid #bae6fd;
+                        border-left: 4px solid #0284c7;
+                        border-radius: 6px;
+                        padding: 1rem 1.25rem;
+                        margin-top: 1.25rem;
+                      }
+                      .counselor-report-only .stream-box h4 {
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        color: #0369a1;
+                        margin-bottom: 0.35rem;
+                      }
+                      .counselor-report-only .stream-box .stream-title {
+                        font-size: 1.1rem;
+                        font-weight: 700;
+                        color: #0c4a6e;
+                        margin-bottom: 0.6rem;
+                      }
+                      .counselor-report-only .stream-box .stream-subjects {
+                        font-size: 0.88rem;
+                        color: #334155;
+                        margin-bottom: 0.75rem;
+                      }
+                      .counselor-report-only .stream-actions {
+                        font-size: 0.85rem;
+                        color: #334155;
+                      }
+                      .counselor-report-only .stream-actions ul {
+                        margin-top: 0.4rem;
+                        padding-left: 1.25rem;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.2rem;
+                        list-style-type: disc;
+                      }
+                      .counselor-report-only .stream-actions ul li {
+                        color: #1e40af;
+                        font-size: 0.85rem;
                       }
                     `}</style>
                     <div>

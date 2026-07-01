@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
             name: "",
             grade: "",
             mode: "adaptive", // 'adaptive' or 'compact'
-            apiKey: ""
+            apiKey: "AQ.Ab8RN6LolHIXVQN39HMee0YVRrVojXZ68O8dSJXCbYjuR4AtAA"
         },
         isTesting: false,
         testStartTime: 0,
@@ -227,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state.student.name = elements.studentNameInput.value.trim();
         state.student.grade = elements.studentGradeSelect.value;
         state.student.mode = elements.testModeSelect.value;
-        state.student.apiKey = elements.apiKeyInput.value.trim() || "AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA";
+        state.student.apiKey = elements.apiKeyInput.value.trim() || GEMINI_API_KEY;
         
         if (!state.student.name || !state.student.grade) return;
         
@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
             state.student.name = elements.studentNameInput.value.trim() || "Harsh Demo";
             state.student.grade = elements.studentGradeSelect.value || "10";
             state.student.mode = elements.testModeSelect.value || "adaptive";
-            state.student.apiKey = elements.apiKeyInput.value.trim() || "AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA";
+            state.student.apiKey = elements.apiKeyInput.value.trim() || GEMINI_API_KEY;
             
             // Generate mock responses for all 84 items
             const mockResponses = [];

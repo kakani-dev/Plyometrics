@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Page } from "components/shared/Page";
 import { DUMMY_QUESTIONS, DUMMY_METRICS } from "./data";
+import { GEMINI_API_KEY } from "configs/gemini.config";
 import WelcomeScreen from "./Components/WelcomeScreen";
 import TestScreen from "./Components/TestScreen";
 import ResultsScreen from "./Components/ResultsScreen";
@@ -17,7 +18,7 @@ export default function ExamGenerator() {
     name: "",
     grade: "",
     testMode: "adaptive",
-    apiKey: "AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA",
+    apiKey: GEMINI_API_KEY,
   });
 
   // Test session state
@@ -93,7 +94,7 @@ export default function ExamGenerator() {
       name: "Harsh Vardhan",
       grade: "10",
       testMode: "adaptive",
-      apiKey: "AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA",
+      apiKey: GEMINI_API_KEY,
     });
     setCurrentScreen("results");
   };
@@ -134,7 +135,7 @@ export default function ExamGenerator() {
       name: "",
       grade: "",
       testMode: "adaptive",
-      apiKey: "AQ.Ab8RN6IcPtEVDv_o9u3KiQlPt5YQ9aE-8Ric9S7j7RnHEJufLA",
+      apiKey: GEMINI_API_KEY,
     });
     setCurrentScreen("welcome");
   };

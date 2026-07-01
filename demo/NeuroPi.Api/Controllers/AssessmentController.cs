@@ -76,7 +76,7 @@ namespace NeuroPi.Api.Controllers
                     var existingReport = await _context.Reports
                         .FirstOrDefaultAsync(r => r.SessionId == request.SessionId);
 
-                    if (existingReport == null || !existingReport.IsAiGenerated)
+                    if (existingReport?.IsAiGenerated != true)
                     {
                         var results = await _assessmentService.CompileResultsAsync(request.SessionId);
                         var response = await _geminiService.GenerateCounselingReportAsync(results, session?.ApiKey ?? string.Empty);
@@ -177,17 +177,23 @@ namespace NeuroPi.Api.Controllers
                 var report = await _context.Reports
                     .FirstOrDefaultAsync(r => r.SessionId == request.SessionId);
                 if (report == null)
+                {
+                    Console.WriteLine($"[ai-report] Session {request.SessionId}: No report found.");
                     return NotFound("No report found. Complete the assessment first.");
+                }
+
+                Console.WriteLine($"[ai-report] Session {request.SessionId}: Source=\"{report.Source}\", IsAiGenerated={report.IsAiGenerated}, TextLength={report.ReportText?.Length ?? 0}");
 
                 return Ok(new GeminiReportResponse
                 {
-                    ReportText = report.ReportText,
-                    Source = report.Source,
+                    ReportText = report.ReportText ?? string.Empty,
+                    Source = report.Source ?? string.Empty,
                     IsAiGenerated = report.IsAiGenerated
                 });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ai-report] Session {request.SessionId}: Exception: {ex.Message}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }

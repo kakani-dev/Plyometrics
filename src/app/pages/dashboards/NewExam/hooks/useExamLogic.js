@@ -418,7 +418,7 @@ Section IV: Guided Counseling & Parental Support Recommendations (List step-by-s
     setProfile({
       name: "",
       grade: "",
-      apiKey: "",
+    apiKey: "AQ.Ab8RN6LolHIXVQN39HMee0YVRrVojXZ68O8dSJXCbYjuR4AtAA",
       difficultyTypes: "",
       difficultyRatios: "",
       questionsPerSubdomain: "",

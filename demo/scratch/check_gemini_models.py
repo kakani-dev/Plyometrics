@@ -1,7 +1,7 @@
 import requests
 import sys
 
-key = "AQ.Ab8RN6JhUQmxxGScXGcSFIU4AgJXg47dkf2miBUIXs-knoSLXQ"
+key = "AQ.Ab8RN6KaI5wx4P-_rVsx6MM8jTrA7E4hyNe3JNEzxhbZM2tjmg"
 models = [
     "gemini-2.0-flash",
     "gemini-2.5-flash",

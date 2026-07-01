@@ -68,39 +68,28 @@ namespace NeuroPi.Api.Services
             var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
             var client = _httpClientFactory.CreateClient();
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key={apiKey}";
-            string usedSource = "Gemini 3.1 Pro";
+            string usedSource = "Gemini 3.5 Flash";
             bool isAi = true;
 
             try
             {
-                var response = await client.PostAsync(url, content);
+                Console.WriteLine($"[SYS] Attempting Gemini 3.5 Flash...");
+                var flashUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={apiKey}";
+                var flashResponse = await client.PostAsync(flashUrl, content);
                 
-                if (!response.IsSuccessStatusCode)
+                if (!flashResponse.IsSuccessStatusCode)
                 {
-                    var errText = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[SYS] Gemini 3.1 Pro failed (Status: {response.StatusCode}). Retrying with gemini-3.5-flash fallback...");
-                    
-                    var fallbackUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={apiKey}";
-                    var fallbackResponse = await client.PostAsync(fallbackUrl, content);
-                    
-                    if (!fallbackResponse.IsSuccessStatusCode)
+                    var errText = await flashResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[SYS] Gemini 3.5 Flash failed (Status: {flashResponse.StatusCode}). Body: {errText}. Generating high-fidelity offline report...");
+                    return new GeminiReportResponse
                     {
-                        var fallbackErrText = await fallbackResponse.Content.ReadAsStringAsync();
-                        Console.WriteLine($"[SYS] Both Gemini 3.1 Pro and Gemini 3.5 Flash failed due to quota/network constraints. Generating high-fidelity offline report...");
-                        return new GeminiReportResponse
-                        {
-                            ReportText = GenerateOfflineNarrative(results),
-                            Source = "Offline Rules Engine (API Key Quota Exceeded / TooManyRequests)",
-                            IsAiGenerated = false
-                        };
-                    }
-                    
-                    response = fallbackResponse;
-                    usedSource = "Gemini 2.0 Flash";
+                        ReportText = GenerateOfflineNarrative(results),
+                        Source = "Offline Rules Engine (API Key Quota Exceeded / TooManyRequests)",
+                        IsAiGenerated = false
+                    };
                 }
-
-                var responseString = await response.Content.ReadAsStringAsync();
+                
+                var responseString = await flashResponse.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(responseString);
                 
                 // Navigate to candidates[0].content.parts[0].text
