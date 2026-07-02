@@ -1,5 +1,5 @@
 export const INITIAL_CONSOLE_LOGS = [
-  "[SYS] NeuroPi Adaptive Assessment engine initialized.",
+  "[SYS] NEUROPI TECH PRIVATE LIMITED - Adaptive Assessment engine initialized.",
   "[SYS] Grade model loaded. Waiting for registration..."
 ];
 

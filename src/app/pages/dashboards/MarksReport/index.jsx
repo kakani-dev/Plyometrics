@@ -10,7 +10,7 @@ const SECTION_LABELS = {
   "cognitive-ability": "Cognitive Ability",
   "emotional-profile": "Emotional Profile",
   "learning-style": "Learning Style",
-  "additional-neuropi-indicators": "Additional NeuroPi Indicators",
+  "additional-neuropi-indicators": "Additional NEUROPI TECH Indicators",
   "validity-readiness": "Validity & Readiness",
 };
 

@@ -24,7 +24,7 @@ export const DUMMY_METRICS = [
   { id: "M10", name: "Kinesthetic Learning", layer: "Learning Style", score: 55, band: "Moderate", flag: "OK", interpretation: "Moderate preference for active tactile learning.", audit: [{ qid: "Q10", question: "I learn best by doing.", response: "Neutral", score: 3, timeSpent: "5.1s", status: "VERIFIED" }] },
 ];
 
-const EXTRA_LAYERS = ["RIASEC Interest", "Big Five Personality", "Cognitive Ability", "Emotional Profile", "Learning Style", "Additional NeuroPi Indicators"];
+const EXTRA_LAYERS = ["RIASEC Interest", "Big Five Personality", "Cognitive Ability", "Emotional Profile", "Learning Style", "Additional NEUROPI TECH Indicators"];
 for (let i = 11; i <= 28; i++) {
   const layer = EXTRA_LAYERS[i % EXTRA_LAYERS.length];
   const score = Math.floor(Math.random() * 40) + 55;

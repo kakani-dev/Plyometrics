@@ -9,7 +9,7 @@ import { XMarkIcon } from "@heroicons/react/24/solid";
 import { NotebookText } from "lucide-react";
 import axios from "axios";
 import dayjs from "dayjs";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { toast } from "sonner";
 
@@ -20,12 +20,45 @@ import { NEUROPI_API_BASE } from "configs/auth.config";
 
 // ----------------------------------------------------------------------
 
+const deriveRatios = (easy, medium, hard) => {
+  const toNum = (v) => (v === "" ? null : (isNaN(Number(v)) ? null : Number(v)));
+  const e = toNum(easy);
+  const m = toNum(medium);
+  const h = toNum(hard);
+
+  const fields = [
+    { key: "easy", val: e },
+    { key: "medium", val: m },
+    { key: "hard", val: h },
+  ];
+
+  const filled = fields.filter((f) => f.val !== null);
+
+  if (filled.length === 2) {
+    const sum = filled[0].val + filled[1].val;
+    if (sum <= 100) {
+      const autoKey = fields.find((f) => f.val === null).key;
+      const autoVal = String(100 - sum);
+      return {
+        easy: autoKey === "easy" ? autoVal : easy,
+        medium: autoKey === "medium" ? autoVal : medium,
+        hard: autoKey === "hard" ? autoVal : hard,
+        disabledField: autoKey,
+      };
+    }
+  }
+
+  return { easy, medium, hard, disabledField: null };
+};
+
 export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
   const [existingExams, setExistingExams] = useState([]);
   const [loadingExams, setLoadingExams] = useState(false);
   const [examDate, setExamDate] = useState(null);
   const [sampleSize, setSampleSize] = useState("");
-  const [ratios, setRatios] = useState("");
+  const [easyRatio, setEasyRatio] = useState("");
+  const [mediumRatio, setMediumRatio] = useState("");
+  const [hardRatio, setHardRatio] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [payloadPreview, setPayloadPreview] = useState(null);
 
@@ -48,6 +81,11 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
     fetchExistingExams();
   }, [isOpen, row.original.id]);
 
+  const ratioDerivation = useMemo(
+    () => deriveRatios(easyRatio, mediumRatio, hardRatio),
+    [easyRatio, mediumRatio, hardRatio],
+  );
+
   const handleSubmit = useCallback(() => {
     if (!examDate) {
       toast.error("Please select an exam date");
@@ -55,6 +93,11 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
     }
     if (!sampleSize) {
       toast.error("Please enter sample size");
+      return;
+    }
+    const { easy, medium, hard } = deriveRatios(easyRatio, mediumRatio, hardRatio);
+    if (easy === "" || medium === "" || hard === "") {
+      toast.error("Please enter all three ratios (Easy, Medium, Hard)");
       return;
     }
 
@@ -65,14 +108,16 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
       tenantId: 1,
       createdBy: "1",
       sampleSize: Number(sampleSize),
-      ratios: ratios,
+      ratios: `${easy},${medium},${hard}`,
     };
 
     setPayloadPreview(payload);
   }, [
     examDate,
     sampleSize,
-    ratios,
+    easyRatio,
+    mediumRatio,
+    hardRatio,
     row.original.id,
   ]);
 
@@ -213,20 +258,77 @@ export function ExamGenerationDrawer({ isOpen, close, row, onDataChange }) {
               </div>
 
               <Input
-                label="Sample Size"
+                label="Number of Questions per Section"
                 type="number"
                 placeholder="e.g. 50"
                 value={sampleSize}
                 onChange={(e) => setSampleSize(e.target.value)}
               />
 
-              <Input
-                label="Ratios"
-                type="text"
-                placeholder="e.g. 100"
-                value={ratios}
-                onChange={(e) => setRatios(e.target.value)}
-              />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                  Ratios
+                </label>
+                <div className="flex gap-3">
+                  <Input
+                    label="Easy"
+                    type="number"
+                    placeholder="Easy"
+                    min={0}
+                    max={100}
+                    value={ratioDerivation.easy}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") { setEasyRatio(val); return; }
+                      const num = Number(val);
+                      if (isNaN(num) || num < 0) return;
+                      const { medium, hard } = deriveRatios(val, mediumRatio, hardRatio);
+                      if (num + Number(medium || 0) + Number(hard || 0) > 100) return;
+                      setEasyRatio(val);
+                    }}
+                    disabled={ratioDerivation.disabledField === "easy"}
+                    classNames={{ root: "w-full" }}
+                  />
+                  <Input
+                    label="Medium"
+                    type="number"
+                    placeholder="Medium"
+                    min={0}
+                    max={100}
+                    value={ratioDerivation.medium}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") { setMediumRatio(val); return; }
+                      const num = Number(val);
+                      if (isNaN(num) || num < 0) return;
+                      const { easy, hard } = deriveRatios(easyRatio, val, hardRatio);
+                      if (num + Number(easy || 0) + Number(hard || 0) > 100) return;
+                      setMediumRatio(val);
+                    }}
+                    disabled={ratioDerivation.disabledField === "medium"}
+                    classNames={{ root: "w-full" }}
+                  />
+                  <Input
+                    label="Hard"
+                    type="number"
+                    placeholder="Hard"
+                    min={0}
+                    max={100}
+                    value={ratioDerivation.hard}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") { setHardRatio(val); return; }
+                      const num = Number(val);
+                      if (isNaN(num) || num < 0) return;
+                      const { easy, medium } = deriveRatios(easyRatio, mediumRatio, val);
+                      if (num + Number(easy || 0) + Number(medium || 0) > 100) return;
+                      setHardRatio(val);
+                    }}
+                    disabled={ratioDerivation.disabledField === "hard"}
+                    classNames={{ root: "w-full" }}
+                  />
+                </div>
+              </div>
 
             </div>
           </div>

@@ -198,7 +198,8 @@ namespace NeuroPi.Api.Services
                     .Replace("{testTypeServiceId}", session.TestTypeServiceId.ToString())
                     .Replace("{tenantId}", session.TenantId.ToString());
                 var url = $"{baseUrl}?sessionId={session.Id}";
-                using var response = await client.PatchAsync(url, null);
+                var emptyContent = new StringContent("", System.Text.Encoding.UTF8, "application/json");
+                using var response = await client.PatchAsync(url, emptyContent);
                 Console.WriteLine($"External API PATCH result: {response.StatusCode}");
             }
             catch (Exception ex)

@@ -248,11 +248,11 @@ export default function ResultsScreen({
               </div>
 
               <div className="report-content" id="report-printable-area">
-                <div className="report-watermark">NEUROPI REPORT</div>
+                <div className="report-watermark">NEUROPI TECH PRIVATE LIMITED - REPORT</div>
                 <div className="report-doc-header">
                   <div className="report-doc-title">
                     <h2>Student Development Intelligence Report</h2>
-                    <p className="subtitle">NeuroPi Psychological and Cognitive Diagnostic Profiling</p>
+                    <p className="subtitle">NEUROPI TECH PRIVATE LIMITED - Psychological and Cognitive Diagnostic Profiling</p>
                   </div>
                   <div className="report-doc-meta">
                     <div className="meta-row"><strong>Student Name:</strong> <span>{profile.name || "Harsh Vardhan"}</span></div>
@@ -333,7 +333,7 @@ export default function ResultsScreen({
                 <div className="report-doc-footer">
                   <div className="signature-line">
                     <div className="signature-space"></div>
-                    <p>NeuroPi Counseling Systems Director</p>
+                    <p>NEUROPI TECH PRIVATE LIMITED - Counseling Systems Director</p>
                   </div>
                   <div className="signature-line">
                     <div className="signature-space"></div>

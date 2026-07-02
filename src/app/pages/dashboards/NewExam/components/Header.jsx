@@ -5,9 +5,9 @@ export default function Header({ currentScreen, profile }) {
     <header className="app-header">
       <div className="header-container">
         <div className="logo-area">
-          <img src={neuropiLogo} alt="NeuroPi Logo" className="brain-logo" style={{ width: 150, height: "auto" }} />
+          <img src={neuropiLogo} alt="NEUROPI TECH PRIVATE LIMITED Logo" className="brain-logo" style={{ width: 150, height: "auto" }} />
           <div className="brand-text">
-            <h1>neuropi</h1>
+            <h1>NEUROPI TECH PRIVATE LIMITED</h1>
             <span className="sub-brand">pi tech pvt ltd</span>
           </div>
         </div>

@@ -25,12 +25,12 @@ const AiReportView = forwardRef(function AiReportView({ text, testName, sessionI
 
   return (
     <div ref={ref} className="report-content">
-      <div className="report-watermark">NEUROPI REPORT</div>
+      <div className="report-watermark">NEUROPI TECH PRIVATE LIMITED - REPORT</div>
 
       <div className="report-doc-header">
         <div className="report-doc-title">
           <h2>Student Development Intelligence Report</h2>
-          <p className="subtitle">NeuroPi Psychological and Cognitive Diagnostic Profiling</p>
+          <p className="subtitle">NEUROPI TECH PRIVATE LIMITED - Psychological and Cognitive Diagnostic Profiling</p>
         </div>
         <div className="report-doc-meta">
           <div><strong>Test:</strong> {testName}</div>

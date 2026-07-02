@@ -1,5 +1,6 @@
 
 
+import { useNavigate } from "react-router";
 
 function parseBoldText(text) {
   const parts = text.split(/\*\*([^*]+)\*\*/g);
@@ -65,6 +66,7 @@ export default function ResultsScreen({
   metricFilter, setMetricFilter, filteredMetrics, setSelectedMetric,
   getStrokeDashOffset, resultsData, generatingAiReport, handleGenerateAiReport
 }) {
+  const navigate = useNavigate();
   const bandClass = (band) =>
     band === "High" ? "text-high" : band === "Moderate" ? "text-moderate" : "text-low";
 
@@ -140,6 +142,7 @@ export default function ResultsScreen({
           <div className="action-buttons">
             <button type="button" className="btn btn-secondary" onClick={() => window.print()}>Print Report</button>
             <button type="button" className="btn btn-secondary" onClick={handleExportJSON}>Export JSON</button>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate("/dashboards/report")}>View Report</button>
             <button type="button" className="btn btn-primary" onClick={handleRestart}>New Assessment</button>
           </div>
         </div>
@@ -294,11 +297,11 @@ export default function ResultsScreen({
               <button type="button" className="btn btn-secondary" onClick={() => window.print()}>Print PDF</button>
             </div>
             <div className="report-content">
-              <div className="report-watermark">NEUROPI REPORT</div>
+              <div className="report-watermark">NEUROPI TECH PRIVATE LIMITED - REPORT</div>
               <div className="report-doc-header">
                 <div className="report-doc-title">
                   <h2>Student Development Intelligence Report</h2>
-                  <p className="subtitle">NeuroPi Psychological and Cognitive Diagnostic Profiling</p>
+                  <p className="subtitle">NEUROPI TECH PRIVATE LIMITED - Psychological and Cognitive Diagnostic Profiling</p>
                 </div>
                 <div className="report-doc-meta">
                   <div><strong>Student:</strong> {profile.name || "Harsh Vardhan"}</div>

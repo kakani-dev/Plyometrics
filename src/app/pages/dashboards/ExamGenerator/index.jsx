@@ -159,7 +159,7 @@ export default function ExamGenerator() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ profile, selectedAnswers, metrics: DUMMY_METRICS }, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `NeuroPi_Report_${profile.name || "Student"}.json`);
+    downloadAnchor.setAttribute("download", `NEUROPI_TECH_PRIVATE_LIMITED_Report_${profile.name || "Student"}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -177,7 +177,7 @@ export default function ExamGenerator() {
                 <path fill="currentColor" opacity="0.8" d="M12,8c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4S14.21,8,12,8z M12,14c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,14,12,14z"/>
               </svg>
               <div className="brand-text">
-                <h1>NeuroPi</h1>
+                <h1>NEUROPI TECH PRIVATE LIMITED</h1>
                 <span className="sub-brand">Student Development Intelligence</span>
               </div>
             </div>

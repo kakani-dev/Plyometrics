@@ -212,11 +212,11 @@ export const SHOWN_METRICS_COUNT = 28; // Standard 28 metrics requested in the t
 
 // Generate additional fillers to reach 28 metrics if needed
 for (let i = 11; i <= SHOWN_METRICS_COUNT; i++) {
-  const layers = ["RIASEC Interest", "Big Five Personality", "Cognitive Ability", "Emotional Profile", "Learning Style", "Additional NeuroPi Indicators"];
+  const layers = ["RIASEC Interest", "Big Five Personality", "Cognitive Ability", "Emotional Profile", "Learning Style", "Additional NEUROPI TECH Indicators"];
   const layer = layers[i % layers.length];
   DUMMY_METRICS.push({
     id: `M${i}`,
-    name: `NeuroPi Indicator Indicator #${i}`,
+    name: `NEUROPI TECH Indicator #${i}`,
     layer: layer,
     score: Math.floor(Math.random() * 40) + 55, // 55 to 95
     band: "Moderate",
